@@ -208,12 +208,3 @@ def main(bookmarks_file):
         bookmarks = parse_root_firefox(root)
     return bookmarks
 
-
-# source = "/home/vagabond/Downloads/booky/temp_helper_files/bookmarks/bookmarks_chrome_2020_07_20.html"
-# output = source.split("/")[-1].replace(".html", ".json")
-# temp = main(source)
-
-# import json
-
-# with open(output, "w", encoding="Utf-8") as f:
-#     json.dump(temp, f, ensure_ascii=False)
