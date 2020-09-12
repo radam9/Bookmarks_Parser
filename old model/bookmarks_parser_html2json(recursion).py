@@ -8,7 +8,7 @@ def indexer(item, index):
     """
     Add position index for urls and folders
     """
-    if item.get("type") in {"url", "folder"}:
+    if item.get("type") in ["url", "folder"]:
         item["index"] = index
         index += 1
     return index
@@ -183,7 +183,7 @@ def parse_root_chrome(root):
                 folder = recursive_parse(node, parent_id)
                 index = indexer(folder, index)
                 other_bookmarks["children"].append(folder)
-    # add "Other Bookmarks" folder to root if it has children
+    # add "Other Bookmarks" folder to room if it has children
     if len(other_bookmarks["children"]) > 0:
         result.append(other_bookmarks)
     return result
