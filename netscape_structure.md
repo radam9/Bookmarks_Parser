@@ -6,7 +6,6 @@ All the Firefox bookmarks are contained inside the main `Bookmarks Menu` list.
 
 The special folders `Bookmarks Toolbar` and `Other Bookmarks` have a special attribute to indicate their type. The `Mobile Bookmarks` folder is not included in the HTML file when being exported, you need to export the bookmarks as JSON or use the firefox sqlite database file to backup to export your `Mobile Bookmarks`.
 
-
 #### Firefox HTML Bookmark file Template
 
 ```html
@@ -38,7 +37,6 @@ All the Chrome bookmarks are contained inside the main list.
 
 The main list usually starts with the `Bookmarks bar` folder, all the bookmarks that follow the `Bookmarks bar` "H3" and are located inside the main list are either inside the `Other Bookmarks` or `Mobile Bookmarks` folder. Unlike the Firefox the `Mobile Bookmarks` folder is included inside the HTML export, but they are included right after the `Other Bookmarks` "H3" and "A" so it is not possible to differentiate between them from within the HTML file.
 
-
 #### Chrome HTML Bookmark file Template
 
 ```html
@@ -46,20 +44,22 @@ The main list usually starts with the `Bookmarks bar` folder, all the bookmarks 
 <TITLE>Bookmarks</TITLE>
 <H1>Bookmarks</H1> <!-- Different H1 Name than Firefox -->
 <DL><p>
-    <!-- Folder containing the Personal_Toolbar_Folder attribute set to true is the "Bookmarks bar" folder -->
+    <!-- Folder containing the Personal_Toolbar_Folder attribute as true is the "Bookmarks bar" folder -->
     <DT><H3 PERSONAL_TOOLBAR_FOLDER="true"></H3>
     <DL><p>
         <DT><H3></H3>
         <DT><A></A>
     </DL><p>
-    <!-- All the "H3" and "A" tags that come after the "Bookmarks bar" "H3" folder and are in the main list, are links and folder from inside the "Other Bookmarks" folder -->
+    <!-- All the "H3" and "A" tags that come after the "Bookmarks bar" "H3" folder,
+     and are in the main list, are links and folder from inside the "Other Bookmarks" folder -->
     <DT><H3></H3>
     <DL><p>
         <DT><H3></H3>
         <DT><A></A>
     </DL><p>
     <DT><A></A>
-    <!-- Chrome appends the "Mobile Bookmarks" folder items after the "Other Bookmarks" folder items, there is no separator or identifier so it is not possible to identify them from the HTML file -->
+    <!-- Chrome appends the "Mobile Bookmarks" folder items after the "Other Bookmarks" folder items,
+     there is no separator or identifier so it is not possible to identify them from the HTML file -->
     <DT><H3></H3>
     <DL><p>
         <DT><H3></H3>
@@ -68,4 +68,3 @@ The main list usually starts with the `Bookmarks bar` folder, all the bookmarks 
     <DT><A></A>
 </DL><p>
 ```
-
