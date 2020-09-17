@@ -1,4 +1,4 @@
-from models import Bookmark
+from models import Bookmark, Folder, Url
 from bs4 import Tag
 
 
@@ -24,12 +24,15 @@ class Node:
     :type date_modified: float
     :param children: children of the current node
     :type children: list
+    :param source: source of bookmark node (chrome/firefox/database..etc)
+    :type source: str
     """
 
-    def __init__(self, node, _id=None, index=None, parent_id=None):
+    def __init__(self, node, _id=None, index=None, parent_id=None, source=None):
         self.id = _id
         self.index = index
         self.parent_id = parent_id
+        self.source = source
         if isinstance(node, Tag):
             self.initialize_from_html(node)
         elif isinstance(node, dict):
@@ -47,7 +50,7 @@ class Node:
         self.date_added = node.get("add_date")
         if node.name == "h3":
             self.type = "folder"
-            self.children = node.contents
+            self.children = []  # or node.contents
         elif node.name == "a":
             self.type = "url"
             self.url = node.get("href")
@@ -58,30 +61,102 @@ class Node:
             self.raise_typeerror("The provided node is neither an 'A' or 'H3' tag")
 
     def initialize_from_json(self, node):
-        self.title = node.get("title")
-        self.date_added = node.get("date_added")
         _type = node.get("type")
         if _type in ("folder", "text/x-moz-place-container"):
             self.type = "folder"
-            self.children = node.get("children")
+            self.children = []  # or node.get("children")
         elif _type in ("url", "text/x-moz-place"):
             self.type = "url"
-            self.url = node.get("url")
+            if self.source == "Firefox":
+                self.url = node.get("uri")
+            else:
+                self.url = node.get("url")
             self.icon = node.get("icon")
             self.icon_uri = node.get("icon_uri")
             self.tags = node.get("tags")
+        if self.source == "Chrome":
+            self.title = node.get("name")
+            self.id += 1
+        else:
+            self.title = node.get("title")
+        if self.source == "Firefox":
+            self.date_added = node.get("dateAdded")
+        else:
+            self.date_added = node.get("date_added")
 
     def initialize_from_db(self, node):
         self.title = node.title
         self.date_added = node.date_added
         _type = node.type
         if _type in ("folder"):
-            self.children = node.contents
+            self.children = []  # or node.children
         elif _type in ("url",):
             self.url = node.url
             self.icon = node.icon
             self.icon_uri = node.icon_uri
             self.tags = node.tags
+
+    def folder_as_html(self):
+        if self.title in ("Bookmarks Toolbar", "Bookmarks bar", "toolbar"):
+            return f'<DT><H3 ADD_DATE="{self.date_added}" LAST_MODIFIED="0" PERSONAL_TOOLBAR_FOLDER="true">{self.title}</H3>\n'
+        elif self.title in ("Other Bookmarks", "unfiled"):
+            return f'<DT><H3 ADD_DATE="{self.date_added}" LAST_MODIFIED="0" UNFILED_BOOKMARKS_FOLDER="true">{self.title}</H3>\n'
+        else:
+            return f'<DT><H3 ADD_DATE="{self.date_added}" LAST_MODIFIED="0">{self.title}</H3>\n'
+
+    def url_as_html(self):
+        return f'<DT><A HREF="{self.url}" ADD_DATE="{self.date_added}" LAST_MODIFIED="0" ICON_URI="{self.icon_uri}" ICON="{self.icon}">{self.title}</A>\n'
+
+    def folder_as_json(self):
+        folder = {
+            "type": self.type,
+            "id": self.id,
+            "index": self.index,
+            "parent_id": self.parent_id,
+            "title": self.title,
+            "date_added": self.date_added,
+            "children": [],
+        }
+        return folder
+
+    def url_as_json(self):
+        url = {
+            "type": self.type,
+            "id": self.id,
+            "index": self.index,
+            "parent_id": self.parent_id,
+            "title": self.title,
+            "date_added": self.date_added,
+            "url": self.url,
+            "icon": self.icon,
+            "iconuri": self.icon_uri,
+            "tags": self.tags,
+        }
+        return url
+
+    def folder_as_db(self):
+        folder = Folder(
+            _id=self.id,
+            index=self.index,
+            parent_id=self.parent_id,
+            title=self.title,
+            date_added=self.date_added,
+        )
+        return folder
+
+    def url_as_db(self):
+        url = Url(
+            _id=self.id,
+            index=self.index,
+            parent_id=self.parent_id,
+            title=self.title,
+            date_added=self.date_added,
+            url=self.url,
+            icon=self.icon,
+            icon_uri=self.icon_uri,
+            tags=self.tags,
+        )
+        return url
 
     @staticmethod
     def raise_typeerror(msg=None):
