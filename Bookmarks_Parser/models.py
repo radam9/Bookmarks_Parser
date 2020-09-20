@@ -1,24 +1,24 @@
+import time
+
 import sqlalchemy
-from sqlalchemy.event import listens_for, remove
 from sqlalchemy import (
-    create_engine,
     Column,
-    Integer,
-    String,
     Date,
     DateTime,
     ForeignKey,
+    Integer,
+    String,
+    create_engine,
 )
-from sqlalchemy.orm import sessionmaker, relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
-import time
+from sqlalchemy.orm import backref, relationship, sessionmaker
 
 engine = create_engine("sqlite:///:memory:")
 Session = sessionmaker(bind=engine)
 session = Session()
 Base = declarative_base()
 
-# Models
+
 class Bookmark(Base):
     """Base model for the Url and Folder model.
     (used to Single Table Inheritence)
@@ -72,8 +72,40 @@ class Bookmark(Base):
         return self.__getattribute__(attr)
 
 
+class Folder(Bookmark):
+    """Model representing bookmark folders
+    ...
+    Attributes
+    ----------
+    id : int
+        id of the folder
+    title : str
+        name of the folder
+    date_added : datetime
+        date folder was added on
+    parent_id : int
+        id of parent folder
+    index : int
+        current index in parent folder
+    urls : db relationship
+        urls contained in the folder"""
+
+    __mapper_args__ = {"polymorphic_identity": "folder"}
+
+    def __init__(self, title, index, parent_id, _id=None, date_added=None):
+        if _id:
+            self.id = _id
+        self.title = title
+        self.index = index
+        self.date_added = date_added
+        self.parent_id = parent_id
+
+    def __repr__(self):
+        return f"{self.title} (id: {self.id})"
+
+
 class Url(Bookmark):
-    """ Model representing the URLs
+    """Model representing the URLs
     ...
     Attributes
     ----------
@@ -131,44 +163,3 @@ class Url(Bookmark):
 
     def __repr__(self):
         return f"{self.title} (id: {self.id}) -in- {self.parent}"
-
-
-class Folder(Bookmark):
-    """ Model representing bookmark folders
-    ...
-    Attributes
-    ----------
-    id : int
-        id of the folder
-    title : str
-        name of the folder
-    date_added : datetime
-        date folder was added on
-    parent_id : int
-        id of parent folder
-    index : int
-        current index in parent folder
-    urls : db relationship
-        urls contained in the folder"""
-
-    __mapper_args__ = {"polymorphic_identity": "folder"}
-
-    def __init__(self, title, index, parent_id, _id=None, date_added=None):
-        if _id:
-            self.id = _id
-        self.title = title
-        self.index = index
-        self.date_added = date_added
-        self.parent_id = parent_id
-
-    def __repr__(self):
-        return f"{self.title} (id: {self.id})"
-
-
-# Event listener that will index Bookmarks before inserting them.
-@listens_for(Bookmark, "before_insert", propagate=True)
-def indexer(mapper, connect, self):
-    if self.parent_id:
-        index = len(Folder.query.get(self.parent_id).children)
-        self.index = index
-

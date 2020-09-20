@@ -1,12 +1,22 @@
-from bs4 import BeautifulSoup
-from models import *
-import time
-import os
 import json
+import os
 import re
+import time
+
+from bs4 import BeautifulSoup
+
+from models import Base, Bookmark, create_engine, Folder, sessionmaker, Url
 
 
 class HTMLMixin:
+    def save_to_html(self):
+        """
+        Function to export the bookmarks as HTML.
+        """
+        output_file = os.path.splitext(self.new_filepath)[0] + ".html"
+        with open(output_file, "w", encoding="Utf-8") as f:
+            f.write(self.bookmarks)
+
     def parse_root_html(self):
         header = """<!DOCTYPE NETSCAPE-Bookmark-file-1>\n<!-- This is an automatically generated file.\n     It will be read and overwritten.\n     DO NOT EDIT! -->\n<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">\n<TITLE>Bookmarks</TITLE>\n<H1>Bookmarks Menu</H1>\n<DL><p>\n"""
         footer = "</DL>"
@@ -79,11 +89,36 @@ class HTMLMixin:
             return item.get("url")
 
 
-class BookmarksParserHTML:
+class JSONMixin:
+    def save_to_json(self):
+        """
+        Function to export the bookmarks as JSON.
+        """
+        output_file = os.path.splitext(self.new_filepath)[0] + ".json"
+        with open(output_file, "w", encoding="Utf-8") as f:
+            json.dump(self.bookmarks, f, ensure_ascii=False)
+
+
+class DBMixin:
+    def save_to_db(self):
+        """
+        Function to export the bookmarks as SQLite3 DB.
+        """
+        database_path = "sqlite:///" + os.path.splitext(self.new_filepath)[0] + ".db"
+        engine = create_engine(database_path, echo=True)
+        Session = sessionmaker(bind=engine)
+        session = Session()
+        Base.metadata.create_all(engine)
+        session.commit()
+        session.bulk_save_objects(self.bookmarks)
+        session.commit()
+
+
+class BookmarksParserHTML(JSONMixin, DBMixin):
     def __init__(self, filepath):
 
         self.new_filepath = (
-            os.path.dirname(filepath) + "/new_" + os.path.basename(filepath)
+            os.path.dirname(filepath) + "/output_" + os.path.basename(filepath)
         )
 
         self.format_bookmark_html(filepath)
@@ -103,7 +138,7 @@ class BookmarksParserHTML:
 
     def format_bookmark_html(self, filepath):
         """
-        Takes in an absolute path to a HTML Bookmarks file, it creates a new Bookmarks file with the text "new_" prepeneded to the filename. where,
+        Takes in an absolute path to a HTML Bookmarks file, it creates a new Bookmarks file with the text "output_" prepeneded to the filename. where,
         - The main "<H1>" header is converted to "<H3>" and acts as the root folder.
         - All "<DT>" tags are removed.
         - "<H3>" acts as folders and list containers instead of "<DL>".
@@ -171,26 +206,6 @@ class BookmarksParserHTML:
             stack_item = self.stack.pop()
             self.iterate_folder(mode="folder", stack_item=stack_item)
 
-    def save_to_json(self):
-        """
-        Function to export the bookmarks as JSON at the same location and with the same name as the original file.
-        """
-        output_file = self.new_filepath.replace(".html", ".json")
-
-        with open(output_file, "w", encoding="Utf-8") as f:
-            json.dump(self.bookmarks, f, ensure_ascii=False)
-
-    def save_to_db(self):
-        database_path = "sqlite:///" + self.new_filepath.replace(".html", ".db")
-        engine = create_engine(database_path, echo=True)
-        Session = sessionmaker(bind=engine)
-        session = Session()
-        remove(Bookmark, "before_insert", indexer)
-        Base.metadata.create_all(engine)
-        session.commit()
-        session.bulk_save_objects(self.bookmarks)
-        session.commit()
-
     def parse_firefox_root_to_json(self):
         """
         Function that will format and iterate through a Firefox bookmarks file.
@@ -208,21 +223,20 @@ class BookmarksParserHTML:
         menu_children = []
         root_children = [bookmarks_menu]
         for child in self.tree:
-            if child.name == "h3":
-                if child.get("personal_toolbar_folder") == "true":
-                    index = len(root_children)
-                    bookmarks_toolbar = self.parse_folder(
-                        child, index, self.bookmarks.get("id")
-                    )
-                    self.add_to_stack((bookmarks_toolbar, child))
-                    root_children.append(bookmarks_toolbar)
-                elif child.get("unfiled.bookmarks.folder") == "true":
-                    index = len(root_children)
-                    other_bookmarks = self.parse_folder(
-                        child, index, self.bookmarks.get("id")
-                    )
-                    self.add_to_stack((other_bookmarks, child))
-                    root_children.append(other_bookmarks)
+            if child.get("personal_toolbar_folder") == "true":
+                index = len(root_children)
+                bookmarks_toolbar = self.parse_folder(
+                    child, index, self.bookmarks.get("id")
+                )
+                self.add_to_stack((bookmarks_toolbar, child))
+                root_children.append(bookmarks_toolbar)
+            elif child.get("unfiled.bookmarks.folder") == "true":
+                index = len(root_children)
+                other_bookmarks = self.parse_folder(
+                    child, index, self.bookmarks.get("id")
+                )
+                self.add_to_stack((other_bookmarks, child))
+                root_children.append(other_bookmarks)
             else:
                 menu_children.append(child)
         if menu_children:
@@ -238,13 +252,10 @@ class BookmarksParserHTML:
         """
         other_children = []
         for child in self.tree.children:
-            if child.name == "h3":
-                if child.get("personal_toolbar_folder") == "true":
-                    bookmarks_bar = self.parse_folder(
-                        child, 0, self.bookmarks.get("id")
-                    )
-                    self.bookmarks["children"].append(bookmarks_bar)
-                    self.add_to_stack((bookmarks_bar, child))
+            if child.get("personal_toolbar_folder") == "true":
+                bookmarks_bar = self.parse_folder(child, 0, self.bookmarks.get("id"))
+                self.bookmarks["children"].append(bookmarks_bar)
+                self.add_to_stack((bookmarks_bar, child))
             else:
                 other_children.append(child)
         if other_children:
@@ -294,14 +305,13 @@ class BookmarksParserHTML:
     def parse_chrome_root_to_db(self, root):
         other_children = []
         for child in self.tree.children:
-            if child.name == "h3":
-                if child.get("personal_toolbar_folder") == "true":
-                    index = len(self.bookmarks) - 1
-                    bookmarks_bar = self.parse_folder(
-                        item=child, index=index, parent_id=root.id
-                    )
-                    self.add_to_stack((bookmarks_bar, child))
-                    self.bookmarks.append(bookmarks_bar)
+            if child.get("personal_toolbar_folder") == "true":
+                index = len(self.bookmarks) - 1
+                bookmarks_bar = self.parse_folder(
+                    item=child, index=index, parent_id=root.id
+                )
+                self.add_to_stack((bookmarks_bar, child))
+                self.bookmarks.append(bookmarks_bar)
             else:
                 other_children.append(child)
         if other_children:
@@ -422,11 +432,11 @@ class BookmarksParserHTML:
         return the_id
 
 
-class BookmarksParserJSON(HTMLMixin):
+class BookmarksParserJSON(HTMLMixin, DBMixin):
     def __init__(self, filepath):
 
         self.new_filepath = (
-            os.path.dirname(filepath) + "/new_" + os.path.basename(filepath)
+            os.path.dirname(filepath) + "/output_" + os.path.basename(filepath)
         )
 
         with open(filepath, "r", encoding="Utf-8") as f:
@@ -465,13 +475,6 @@ class BookmarksParserJSON(HTMLMixin):
             self.stack = self.tree.get("children")[::-1]
         self.parse_root_html()
 
-    def save_to_html(self):
-
-        output_file = self.new_filepath.replace(".json", ".html")
-
-        with open(output_file, "w", encoding="Utf-8") as f:
-            f.write(self.bookmarks)
-
     def convert_to_db(self):
         self.bookmarks = []
         # contains tuples (folder, index, parent_id).
@@ -485,17 +488,6 @@ class BookmarksParserJSON(HTMLMixin):
         while self.stack:
             stack_item = self.stack.pop()
             self.iterate_folder_db(stack_item)
-
-    def save_to_db(self):
-        database_path = "sqlite:///" + self.new_filepath.replace(".json", ".db")
-        engine = create_engine(database_path, echo=True)
-        Session = sessionmaker(bind=engine)
-        session = Session()
-        remove(Bookmark, "before_insert", indexer)
-        Base.metadata.create_all(engine)
-        session.commit()
-        session.bulk_save_objects(self.bookmarks)
-        session.commit()
 
     def iterate_folder_db(self, stack_item):
         item, index, parent_id = stack_item
@@ -554,11 +546,11 @@ class BookmarksParserJSON(HTMLMixin):
         return (_id, title, index, date_added)
 
 
-class BookmarksParserDB(HTMLMixin):
+class BookmarksParserDB(HTMLMixin, JSONMixin):
     def __init__(self, filepath):
 
         self.new_filepath = (
-            os.path.dirname(filepath) + "/new_" + os.path.basename(filepath)
+            os.path.dirname(filepath) + "/output_" + os.path.basename(filepath)
         )
 
         database_path = "sqlite:///" + filepath
@@ -571,13 +563,6 @@ class BookmarksParserDB(HTMLMixin):
     def convert_to_html(self):
         self.stack = self.tree.get("children")[::-1]
         self.parse_root_html()
-
-    def save_to_html(self):
-
-        output_file = self.new_filepath.replace(".db", ".html")
-
-        with open(output_file, "w", encoding="Utf-8") as f:
-            f.write(self.bookmarks)
 
     def convert_to_json(self):
         self.stack = []
@@ -596,15 +581,6 @@ class BookmarksParserDB(HTMLMixin):
                     if child.children:
                         self.stack.append((item, child))
                 folder.get("children").append(item)
-
-    def save_to_json(self):
-        """
-        Function to export the bookmarks as JSON at the same location and with the same name as the original file.
-        """
-        output_file = self.new_filepath.replace(".db", ".json")
-
-        with open(output_file, "w", encoding="Utf-8") as f:
-            json.dump(self.bookmarks, f, ensure_ascii=False)
 
     def parse_folder(self, folder):
         """
