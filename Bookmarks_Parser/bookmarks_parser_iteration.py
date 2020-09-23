@@ -11,7 +11,7 @@ from models import Base, Bookmark, create_engine, Folder, sessionmaker, Url
 class HTMLMixin:
     def save_to_html(self):
         """
-        Function to export the bookmarks as HTML.
+        Export the bookmarks as HTML.
         """
         output_file = os.path.splitext(self.new_filepath)[0] + ".html"
         with open(output_file, "w", encoding="Utf-8") as f:
@@ -41,7 +41,7 @@ class HTMLMixin:
         self.bookmarks = "".join(temp)
 
     def iterate_folder_html(self, stack_item):
-        folder = [self.parse_folder_html(stack_item), "<DL><p>\n"]
+        folder = [self._create_folder_as_html(stack_item), "<DL><p>\n"]
         list_end = "</DL><p>\n"
 
         children = stack_item.get("children")
@@ -51,13 +51,13 @@ class HTMLMixin:
                     item = f'<folder{child.get("id")}>'
                     self.stack.append(child)
                 else:
-                    item = self.parse_url_html(child)
+                    item = self._create_url_as_html(child)
                 folder.append(item)
             folder.append(list_end)
             result = "".join(folder)
             return result
 
-    def parse_folder_html(self, folder):
+    def _create_folder_as_html(self, folder):
         date_added = self.get_date_added(folder)
         title = self.get_title(folder)
         if title in ("Bookmarks Toolbar", "Bookmarks bar", "toolbar"):
@@ -67,7 +67,7 @@ class HTMLMixin:
         else:
             return f'<DT><H3 ADD_DATE="{date_added}" LAST_MODIFIED="0">{title}</H3>\n'
 
-    def parse_url_html(self, url):
+    def _create_url_as_html(self, url):
         return f'<DT><A HREF="{self.get_url(url)}" ADD_DATE="{self.get_date_added(url)}" LAST_MODIFIED="0" ICON_URI="{url.get("icon_uri")}" ICON="{url.get("icon")}">{self.get_title(url)}</A>\n'
 
     def get_title(self, item):
@@ -121,7 +121,7 @@ class BookmarksParserHTML(JSONMixin, DBMixin):
             os.path.dirname(filepath) + "/output_" + os.path.basename(filepath)
         )
 
-        self.format_bookmark_html(filepath)
+        self.format_html_file(filepath)
 
         with open(self.new_filepath, "r", encoding="Utf-8") as f:
             self.soup = BeautifulSoup(
@@ -136,7 +136,7 @@ class BookmarksParserHTML(JSONMixin, DBMixin):
         # folder being the parsed data, and node being the folder data from the tree.
         self.stack = []
 
-    def format_bookmark_html(self, filepath):
+    def format_html_file(self, filepath):
         """
         Takes in an absolute path to a HTML Bookmarks file, it creates a new Bookmarks file with the text "output_" prepeneded to the filename. where,
         - The main "<H1>" header is converted to "<H3>" and acts as the root folder.

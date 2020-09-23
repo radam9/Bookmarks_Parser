@@ -3,3 +3,7 @@ __pycache__
 .vscode
 venv
 temp
+timing.py
+test.py
+testing.py
+import_json_as_object_recursively.py

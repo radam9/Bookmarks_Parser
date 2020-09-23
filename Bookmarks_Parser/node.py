@@ -1,102 +1,41 @@
 from models import Bookmark, Folder, Url
+import json
+import time
 from bs4 import Tag
 
 
 class Node:
     """
-    Class containing information and methods for a Bookmarks File node (URL/FOLDER) obtained from a HTML/JSON/DB file as source.
-
-    Parameters:
-    ----------
-    :param type: node type (folder or url)
-    :type type: str
-    :param id: id of the node
-    :type id: int
-    :param index: index (position) of the node in its parent
-    :type index: int
-    :param parent_id: id of the node's parent
-    :type parent_id: int
-    :param title: title (name) of the node
-    :type title: str
-    :param date_added: date (time since epoch) at which the node was created/added to the bookmarks
-    :type date_added: float
-    :param date_modified: date (time since epoch) at which the node was created/last modified
-    :type date_modified: float
-    :param children: children of the current node
-    :type children: list
-    :param source: source of bookmark node (chrome/firefox/database..etc)
-    :type source: str
+    Mixing class containing the methods used to create folders/urls in
+    different formats HTML/JSON/DB, used in the creation of new bookmark tree
+    in a different format.
     """
 
-    def __init__(self, node, _id=None, index=None, parent_id=None, source=None):
-        self.id = _id
-        self.index = index
-        self.parent_id = parent_id
-        self.source = source
-        if isinstance(node, Tag):
-            self.initialize_from_html(node)
-        elif isinstance(node, dict):
-            self.initialize_from_json(node)
-        elif isinstance(node, Bookmark):
-            self.initialize_from_db(node)
-        else:
-            self.raise_typeerror()
+    def create_folder_as_db(self):
+        folder = Folder(
+            _id=self.id,
+            index=self.index,
+            parent_id=self.parent_id,
+            title=self.title,
+            date_added=self.date_added,
+        )
+        return folder
 
-    def initialize_from_html(self, node):
-        """
-        Initialize the Node class using a BeautifulSoup4 Tag element as an input
-        """
-        self.title = node.get("title")
-        self.date_added = node.get("add_date")
-        if node.name == "h3":
-            self.type = "folder"
-            self.children = []  # or node.contents
-        elif node.name == "a":
-            self.type = "url"
-            self.url = node.get("href")
-            self.icon = node.get("icon")
-            self.icon_uri = node.get("icon_uri")
-            self.tags = node.get("tags")
-        else:
-            self.raise_typeerror("The provided node is neither an 'A' or 'H3' tag")
+    def create_url_as_db(self):
+        url = Url(
+            _id=self.id,
+            index=self.index,
+            parent_id=self.parent_id,
+            title=self.title,
+            date_added=self.date_added,
+            url=self.url,
+            icon=self.icon,
+            icon_uri=self.icon_uri,
+            tags=self.tags,
+        )
+        return url
 
-    def initialize_from_json(self, node):
-        _type = node.get("type")
-        if _type in ("folder", "text/x-moz-place-container"):
-            self.type = "folder"
-            self.children = []  # or node.get("children")
-        elif _type in ("url", "text/x-moz-place"):
-            self.type = "url"
-            if self.source == "Firefox":
-                self.url = node.get("uri")
-            else:
-                self.url = node.get("url")
-            self.icon = node.get("icon")
-            self.icon_uri = node.get("icon_uri")
-            self.tags = node.get("tags")
-        if self.source == "Chrome":
-            self.title = node.get("name")
-            self.id += 1
-        else:
-            self.title = node.get("title")
-        if self.source == "Firefox":
-            self.date_added = node.get("dateAdded")
-        else:
-            self.date_added = node.get("date_added")
-
-    def initialize_from_db(self, node):
-        self.title = node.title
-        self.date_added = node.date_added
-        _type = node.type
-        if _type in ("folder"):
-            self.children = []  # or node.children
-        elif _type in ("url",):
-            self.url = node.url
-            self.icon = node.icon
-            self.icon_uri = node.icon_uri
-            self.tags = node.tags
-
-    def folder_as_html(self):
+    def create_folder_as_html(self):
         if self.title in ("Bookmarks Toolbar", "Bookmarks bar", "toolbar"):
             return f'<DT><H3 ADD_DATE="{self.date_added}" LAST_MODIFIED="0" PERSONAL_TOOLBAR_FOLDER="true">{self.title}</H3>\n'
         elif self.title in ("Other Bookmarks", "unfiled"):
@@ -104,10 +43,10 @@ class Node:
         else:
             return f'<DT><H3 ADD_DATE="{self.date_added}" LAST_MODIFIED="0">{self.title}</H3>\n'
 
-    def url_as_html(self):
+    def create_url_as_html(self):
         return f'<DT><A HREF="{self.url}" ADD_DATE="{self.date_added}" LAST_MODIFIED="0" ICON_URI="{self.icon_uri}" ICON="{self.icon}">{self.title}</A>\n'
 
-    def folder_as_json(self):
+    def create_folder_as_json(self):
         folder = {
             "type": self.type,
             "id": self.id,
@@ -119,7 +58,7 @@ class Node:
         }
         return folder
 
-    def url_as_json(self):
+    def create_url_as_json(self):
         url = {
             "type": self.type,
             "id": self.id,
@@ -134,32 +73,136 @@ class Node:
         }
         return url
 
-    def folder_as_db(self):
-        folder = Folder(
-            _id=self.id,
-            index=self.index,
-            parent_id=self.parent_id,
-            title=self.title,
-            date_added=self.date_added,
-        )
-        return folder
+    def create_folder(self, output_format):
+        formats = {
+            "db": lambda: self.create_folder_as_db(),
+            "html": lambda: self.create_folder_as_html(),
+            "json": lambda: self.create_folder_as_json(),
+        }
+        return formats[output_format]()
 
-    def url_as_db(self):
-        url = Url(
-            _id=self.id,
-            index=self.index,
-            parent_id=self.parent_id,
-            title=self.title,
-            date_added=self.date_added,
-            url=self.url,
-            icon=self.icon,
-            icon_uri=self.icon_uri,
-            tags=self.tags,
-        )
-        return url
+    def create_url(self, output_format):
+        formats = {
+            "db": lambda: self.create_url_as_db(),
+            "html": lambda: self.create_url_as_html(),
+            "json": lambda: self.create_url_as_json(),
+        }
+        return formats[output_format]()
 
-    @staticmethod
-    def raise_typeerror(msg=None):
-        if msg is None:
-            msg = "You need to provide a proper node input."
-        raise TypeError(msg)
+    def __iter__(self):
+        "Iterating over an Object iterates over its contents."
+        return iter(self.children)
+
+    def __repr__(self):
+        return f"{self.title} - {self.type} - id: {self.id}"
+
+
+class JSONBookmark(Node):
+    """
+    JSON Bookmark class used to create objects out of the folders/urls in a
+    json bookmarks file while importing (json.load) using the object_hook.
+
+    Attributes:
+    ----------
+    :param id: id of the element
+    :type id: int
+    :param index: index (position) of the element in its parent
+    :type index: int
+    :param parent_id: id of the element's parent
+    :type parent_id: int
+    :param title: title (name) of the element
+    :type title: str
+    :param date_added: date (time since epoch) at which the element was
+    created/added to the bookmarks
+    :type date_added: float
+    :param type: element type (folder or url)
+    :type type: str
+    :param children: children of the current element
+    :type children: list
+    :param source: source of bookmark element (chrome/firefox/bookmarkie)
+    :type source: str
+
+    Parameters:
+    -----------
+    The class expects a mix of parameters similar to the attributes, they vary
+    depending on the element type (folder/url)
+    """
+
+    def __init__(self, **kwargs):
+
+        if "name" in kwargs:
+            self.source = "Chrome"
+        elif "typeCode" in kwargs:
+            self.source = "Firefox"
+        else:
+            self.source = "Bookmarkie"
+
+        self.id = int(kwargs.pop("id"))
+        self.index = kwargs.pop("index", None)
+        self.parent_id = kwargs.pop("parent_id", None)
+        # chrome uses different key for title
+        self.title = kwargs.pop("title", kwargs.pop("name", None))
+        # firefox uses different key for date_added
+        self.date_added = int(kwargs.pop("date_added", kwargs.pop("dateAdded", None)))
+
+        temp = kwargs.pop("type")
+        if temp in ("folder", "text/x-moz-place-container"):
+            self.type = "folder"
+            self.children = kwargs.pop("children", [])
+        elif temp in ("url", "text/x-moz-place"):
+            self.type = "url"
+            # firefox uses different key for url
+            self.url = kwargs.pop("url", kwargs.pop("uri", None))
+            self.icon = kwargs.pop("icon", None)
+            # firefox uses different key for icon_uri
+            self.icon_uri = kwargs.pop("icon_uri", kwargs.pop("iconuri", None))
+            self.tags = kwargs.pop("tags", None)
+
+        if self.source == "Chrome":
+            # chrome starts id from 0 not 1, add 1 to adjust
+            self.id += 1
+            # adjusting epoch for chrome timestamp
+            self.date_added = self.date_added - 11644473600000000
+
+
+class HTMLBookmark(Tag, Node):
+    """
+    TreeBuilder class, used to add property access to the beautifulsoup
+    Tag class' attributes (date_added, icon, icon_uri, title, type and url).
+    """
+
+    @property
+    def date_added(self):
+        date_added = self.attrs.get("add_date")
+        if not date_added:
+            date_added = round(time.time() * 1000)
+        return int(date_added)
+
+    @property
+    def icon(self):
+        return self.attrs.get("icon")
+
+    @property
+    def icon_uri(self):
+        return self.attrs.get("icon_uri")
+
+    @property
+    def title(self):
+        return self.attrs.get("title")
+
+    @property
+    def type(self):
+        if self.name == "h3":
+            return "folder"
+        elif self.name == "a":
+            return "url"
+
+    @property
+    def url(self):
+        return self.attrs.get("href")
+
+    @property
+    def children(self):
+        """To standardize the access of children amongst the different
+        classes."""
+        return self.contents

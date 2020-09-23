@@ -43,9 +43,10 @@ class Bookmark(Base):
 
     id = Column(Integer, primary_key=True)
     title = Column(String)
-    date_added = Column(Integer, nullable=False, default=time.time())
     index = Column(Integer)
     parent_id = Column(Integer, ForeignKey("bookmark.id"), nullable=True)
+    date_added = Column(Integer, nullable=False, default=round(time.time() * 1000))
+    type = Column(String)
     parent = relationship(
         "Bookmark",
         cascade="save-update, merge",
@@ -53,7 +54,6 @@ class Bookmark(Base):
         lazy=False,
         remote_side="Bookmark.id",
     )
-    type = Column(String)
 
     __mapper_args__ = {"polymorphic_on": type, "polymorphic_identity": "bookmark"}
 
@@ -67,9 +67,6 @@ class Bookmark(Base):
     def delete(self):
         session.delete(self)
         session.commit()
-
-    def get(self, attr):
-        return self.__getattribute__(attr)
 
 
 class Folder(Bookmark):
@@ -97,11 +94,8 @@ class Folder(Bookmark):
             self.id = _id
         self.title = title
         self.index = index
-        self.date_added = date_added
         self.parent_id = parent_id
-
-    def __repr__(self):
-        return f"{self.title} (id: {self.id})"
+        self.date_added = date_added
 
 
 class Url(Bookmark):
@@ -138,9 +132,9 @@ class Url(Bookmark):
     def __init__(
         self,
         title,
-        url,
         index,
         parent_id,
+        url,
         _id=None,
         date_added=None,
         icon=None,
@@ -153,13 +147,10 @@ class Url(Bookmark):
             self.title = url
         else:
             self.title = title
-        self.url = url
         self.index = index
+        self.parent_id = parent_id
         self.date_added = date_added
+        self.url = url
         self.icon = icon
         self.icon_uri = icon_uri
         self.tags = tags
-        self.parent_id = parent_id
-
-    def __repr__(self):
-        return f"{self.title} (id: {self.id}) -in- {self.parent}"
