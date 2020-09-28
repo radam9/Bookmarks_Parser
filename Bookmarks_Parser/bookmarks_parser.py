@@ -5,7 +5,7 @@ import time
 
 from bs4 import BeautifulSoup, Tag
 
-from .models import (
+from models import (
     Base,
     Bookmark,
     Folder,
@@ -18,29 +18,12 @@ from .models import (
 )
 
 
-class BookmarkEncoder(json.JSONEncoder):
-    """JSON Bookmarks Encoder, serializes the bookmark object as a dictionary"""
-
-    def defaut(self, obj):
-        bookmarks = (Bookmark, Folder, Url, Node, JSONBookmark, HTMLBookmark)
-        print(type(obj))
-        if isinstance(obj, bookmarks):
-            if obj.type == "folder":
-                obj = obj.create_folder_as_json()
-                return obj
-            elif obj.type == "url":
-                obj = obj.create_url_as_json()
-                return obj
-        return json.JSONEncoder.default(self, obj)
-
-
 class BookmarksParserMixin:
-    """Mixin containing all the core Bookmarks Parser functionality, which is later inherited by either the Iteration or Recursion parser."""
+    """Mixin containing all the core Bookmarks Parser functionality, which is
+    later inherited by either the Iteration or Recursion parser."""
 
     def from_db(self, filepath):
-        """
-        Import the DB bookmarks file into self.tree as an object.
-        """
+        """Import the DB bookmarks file into self.tree as an object."""
         self.new_filepath = (
             os.path.dirname(filepath) + "/output_" + os.path.basename(filepath)
         )
@@ -79,9 +62,7 @@ class BookmarksParserMixin:
 
         tree = soup.find("h3")
         self._restructure_root(tree)
-        # set the id counter, will be used to add IDs to all elements when
-        # converting the html bookmarks tree to JSON/DB.
-        # self._add_index()
+        self._add_index()
 
     @staticmethod
     def format_html_file(filepath, output_filepath):
@@ -219,10 +200,12 @@ class BookmarksParserMixin:
             json.dump(self.bookmarks, f, ensure_ascii=False)
 
     def convert_to_json_using_encoder(self):
-        """This has not been proven to work yet!!, needs to be checked"""
+        """Converts the bookmarks tree into JSON, using the `json.dump()`
+        while overriding the `default()` function located inside JSONEncoder
+        with the `self.default()` method by passing it in as a parameter."""
         output_file = os.path.splitext(self.new_filepath)[0] + ".json"
         with open(output_file, "w", encoding="Utf-8") as f:
-            json.dump(obj=self.tree, fp=f, cls=BookmarkEncoder, ensure_ascii=False)
+            json.dump(obj=self.tree, fp=f, ensure_ascii=False, default=self.default)
 
     def _add_index(self):
         """Add index to each element if tree source is HTML or JSON(Chrome)"""
@@ -233,6 +216,22 @@ class BookmarksParserMixin:
                 child.index = i
                 if child.type == "folder":
                     stack.append(child)
+
+    @staticmethod
+    def default(obj):
+        """JSON Bookmarks Serializing function,
+        passed into `json.dump()` to serialize the JSONBookmark Objects
+        into a dictionary"""
+        bookmarks = (Bookmark, Folder, Url, Node, JSONBookmark, HTMLBookmark)
+        if isinstance(obj, bookmarks):
+            if obj.type == "folder":
+                o = obj.create_folder_as_json()
+                o["children"].extend(obj.children)
+                return o
+            elif obj.type == "url":
+                o = obj.create_url_as_json()
+                return o
+        return json.JSONEncoder.default(obj)
 
 
 class BookmarksParserIteration(BookmarksParserMixin):
@@ -347,8 +346,8 @@ class BookmarksParserIteration(BookmarksParserMixin):
 # append_to_list = list_name.append(), and put append_to_list inside the loop
 # instead
 
-# [X] create a function that adds id/index to the element depending on its source
-# json/chrome or html.
+# [X] create a function that adds id/index to the element depending
+#  on its source json/chrome or html.
 
 # [X] convert the for loops from using a list to using an iterator (.children)
 
@@ -361,11 +360,11 @@ class BookmarksParserIteration(BookmarksParserMixin):
 # NOTE: the stack_item and index needs to be bound to self (self.stack_item)
 # and (self.index) for this way to work
 
-# [12)] Likewise thre should be a sort of switch that toggles whether it is
+# [12)] Likewise there should be a sort of switch that toggles whether it is
 # required to add parent_id to the items or not (only if converting to DB)
 
-# [13)] after using the function _add_index_and_id in an iterative/recursive
-# function, we need to reset the self.id back to 1.
+# [13)] after importing an HTML file, we need to reset the HTMLBookmark
+# counter = itertools.count() to 2
 
 # [14)] Maybe its possible to completely remove the string/regex substitution in
 # format_html_file() if I read more into BS4 and its options
@@ -378,9 +377,11 @@ class BookmarksParserIteration(BookmarksParserMixin):
 # [17)] iterate_folder_db() will currently not work due to the lack of
 # index and parent_id, and a mismatch of the items read and added to the stack.
 
-# [18)] convert_to_json_using_encoder() has not been tested with a big hierarchy
+# [x] convert_to_json_using_encoder() has not been tested with a big hierarchy
 # object, it has been tested on a small nested object and worked.
+# check the 'default=' parameter in json.dump()
+# now the function is fully functional
 
-# [X] use itertools.count(start=1) instead of global ID counter.
+# [X] use itertools.count(start=2) instead of global ID counter.
 
 # [20)] check for improvements for _format_html_file() function.

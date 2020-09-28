@@ -9,8 +9,8 @@ subtract 11644473600000000 to bring it to unix epoch
 "children": [],
 "date_added": "13244233436520764",
 "date_modified": "0",
-"id": "6",
-"name": "Social",
+"id": "1",
+"name": "Main Folder",
 "type": "folder"
 }
 
@@ -18,10 +18,10 @@ subtract 11644473600000000 to bring it to unix epoch
 
 {
 "date_added": "13244224395000000",
-"id": "7",
-"name": "Twitter. It’s what’s happening / Twitter",
+"id": "2",
+"name": "Google",
 "type": "url",
-"url": "https://twitter.com/?lang=en"
+"url": "https://www.google.com"
 }
 
 # JSON Firefox
@@ -30,11 +30,11 @@ subtract 11644473600000000 to bring it to unix epoch
 
 {
 "guid":"K3LUb7o0kSUt",
-"title":"Mozilla Firefox",
+"title":"Main Folder",
 "index":0,
 "dateAdded":1599750431776000,
 "lastModified":1599750431776000,
-"id":7,
+"id":1,
 "typeCode":2,
 "type":"text/x-moz-place-container",
 "children":[]
@@ -44,15 +44,15 @@ subtract 11644473600000000 to bring it to unix epoch
 
 {
 "guid":"7TpRGhofxKDv",
-"title":"Help and Tutorials",
+"title":"Google",
 "index":0,
 "dateAdded":1599750431776000,
 "lastModified":1599750431776000,
-"id":8,
+"id":2,
 "typeCode":1,
-"iconuri":"fake-favicon-uri:https://support.mozilla.org/en-US/products/firefox",
+"iconuri":None,
 "type":"text/x-moz-place",
-"uri":"https://support.mozilla.org/en-US/products/firefox"
+"uri":"https://www.google.com"
 }
 
 # JSON Bookmarkie
@@ -61,11 +61,11 @@ subtract 11644473600000000 to bring it to unix epoch
 
 {
 "type": "folder",
-"id": folder.id,
-"index": folder.index,
-"parent_id": folder.parent_id,
-"title": folder.title,
-"date_added": folder.date_added,
+"id": 1,
+"index": 0,
+"parent_id": 0,
+"title": "Main Folder",
+"date_added": 0,
 "children": [],
 }
 
@@ -73,13 +73,13 @@ subtract 11644473600000000 to bring it to unix epoch
 
 {
 "type": "url",
-"id": url.id,
-"index": url.index,
-"parent_id": url.parent_id,
-"url": url.url,
-"title": url.title,
-"date_added": url.date_added,
-"icon": url.icon,
-"iconuri": url.icon_uri,
-"tags": url.tags,
+"id": 2,
+"index": 0,
+"parent_id": 1,
+"url": "https://www.google.com",
+"title": "Google",
+"date_added": 0,
+"icon": None,
+"iconuri": None,
+"tags": None,
 }

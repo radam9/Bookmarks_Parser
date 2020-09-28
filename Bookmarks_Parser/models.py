@@ -23,11 +23,9 @@ Base = declarative_base()
 
 
 class Node:
-    """
-    Mixing class containing the methods used to create folders/urls in
+    """Mixing class containing the methods used to create folders/urls in
     different formats HTML/JSON/DB, used in the creation of new bookmark tree
-    in a different format.
-    """
+    in a different format."""
 
     def create_folder_as_db(self):
         self.check_type("folder")
@@ -131,7 +129,7 @@ class Node:
 
 class Bookmark(Base, Node):
     """Base model for the Url and Folder model.
-    (used to Single Table Inheritence)
+    (used for Single Table Inheritence)
     ...
     Attributes
     ----------
@@ -146,7 +144,8 @@ class Bookmark(Base, Node):
     parent_id : int
         id of the folder the bookmark (url/folder) is contained in
     parent : relation
-        Many to One relation for the Folder, containing the bookmarks (url/folder)
+        Many to One relation for the Folder, containing the
+        bookmarks (url/folder)
     """
 
     __tablename__ = "bookmark"
@@ -267,8 +266,7 @@ class Url(Bookmark):
 
 
 class JSONBookmark(Node):
-    """
-    JSON Bookmark class used to create objects out of the folders/urls in a
+    """JSON Bookmark class used to create objects out of the folders/urls in a
     json bookmarks file while importing (json.load) using the object_hook.
 
     Attributes:
@@ -294,8 +292,7 @@ class JSONBookmark(Node):
     Parameters:
     -----------
     The class expects a mix of parameters similar to the attributes, they vary
-    depending on the element type (folder/url)
-    """
+    depending on the element type (folder/url)"""
 
     def __init__(self, **kwargs):
 
@@ -335,10 +332,16 @@ class JSONBookmark(Node):
 
 
 class HTMLBookmark(Tag, Node):
-    """
-    TreeBuilder class, used to add property access to the beautifulsoup
-    Tag class' attributes (date_added, icon, icon_uri, title, type and url).
-    """
+    """TreeBuilder class, used to add additional functionality to the
+    BeautifulSoup Tag class. The following functionality is added:
+
+    - add id to each folder("h3")/url("a") being imported
+    - add property access to the Tag class' attributes
+      (date_added, icon, icon_uri, id, index, title, type and url)
+      which are usually found at the 'self.attrs' dictionary.
+    - add a setter for (id, index and title)
+    - redirect the self.children from and iterator iter(self.contents)
+    to a list (self.contents) directly"""
 
     counter = itertools.count(start=2)
 

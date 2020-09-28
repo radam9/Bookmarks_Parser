@@ -5,19 +5,15 @@ class MyEncoder(json.JSONEncoder):
     def default(self, obj):
         t = (Node, object)
         if isinstance(obj, t):
-            # data = {"name": obj.name, "type": obj.type}
-            # if obj.type == "folder":
-            #     data["children"] = obj.children
-            # return data
             if obj.type == "folder":
-                return obj.f()
+                return obj.format_folder()
             elif obj.type == "url":
-                return obj.u()
+                return obj.format_url()
         return json.JSONEncoder.default(self, obj)
 
 
 class Some:
-    def f(self):
+    def format_folder(self):
         folder = {
             "name": self.name,
             "type": self.type,
@@ -25,7 +21,7 @@ class Some:
         }
         return folder
 
-    def u(self):
+    def format_url(self):
         url = {
             "name": self.name,
             "type": self.type,
