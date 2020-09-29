@@ -1,6 +1,6 @@
+import itertools
 import json
 import time
-import itertools
 
 import sqlalchemy
 from bs4 import Tag
@@ -343,13 +343,13 @@ class HTMLBookmark(Tag, Node):
     - redirect the self.children from and iterator iter(self.contents)
     to a list (self.contents) directly"""
 
-    counter = itertools.count(start=2)
+    id_counter = itertools.count(start=2)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.name in ("a", "h3"):
             if not self.attrs.get("id"):
-                self.attrs["id"] = next(__class__.counter)
+                self.attrs["id"] = next(__class__.id_counter)
 
     @property
     def date_added(self):
@@ -406,3 +406,7 @@ class HTMLBookmark(Tag, Node):
         """To standardize the access of children amongst the different
         classes."""
         return self.contents
+
+    @classmethod
+    def reset_id_counter(cls):
+        cls.id_counter = itertools.count(start=2)
