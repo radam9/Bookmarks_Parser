@@ -447,19 +447,18 @@ class BookmarksParserJSON(HTMLMixin, DBMixin):
             self.tree = {
                 "title": "root",
                 "id": 0,
-                "children": [folder for folder in self.tree.get("roots").values()],
+                "children": list(self.tree.get("roots").values()),
             }
         elif self.tree.get("root"):
             self.source = "Firefox"
+            folders = {
+                "menu": "Bookmarks Menu",
+                "toolbar": "Bookmarks Toolbar",
+                "unfiled": "Other Bookmarks",
+                "mobile": "Mobile Bookmarks",
+            }
             for child in self.tree.get("children"):
-                if child.get("title") == "menu":
-                    child["title"] = "Bookmarks Menu"
-                elif child.get("title") == "toolbar":
-                    child["title"] = "Bookmarks Toolbar"
-                elif child.get("title") == "unfiled":
-                    child["title"] = "Other Bookmarks"
-                elif child.get("title") == "mobile":
-                    child["title"] = "Mobile Bookmarks"
+                child["title"] = folders[child.get("title")]
         else:
             self.source = "Bookmarkie"
 

@@ -1,3 +1,19 @@
+"""Bookmarks Parser, is a package that converts the webpage bookmarks
+from DB/HTML/JSON to DB/HTML/JSON.
+
+The DB files supported are custom (self made) sqlite database files,
+to see the exact format of the database you can check the .db file found
+in the test/data folder.
+
+The HTML files supported are Netscape-Bookmark files from either Chrome or
+Firefox.
+
+The JSON files supported are the Chrome bookmarks file and the Firefox 
+.json bookmarks export file."""
+
+# Use of this source code is governed by the MIT license.
+__license__ = "MIT"
+
 import json
 import os
 import re
