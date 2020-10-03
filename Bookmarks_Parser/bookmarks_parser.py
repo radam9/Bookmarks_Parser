@@ -311,9 +311,10 @@ class BookmarksParser(DBMixin, HTMLMixin, JSONMixin):
     Iteration and Stack.
 
     Usage:
-    1- Instantiate a class and Import the bookmark file by passing in the
-        filepath when instantiating `bookmarks = BookmarksParser(filepath)`.
-    2- Parse the file using the method corresponding to the source format:
+    1- Instantiate a class and pass in the filepath:
+        - `bookmarks = BookmarksParser(filepath)`.
+    2- Import and Parse the bookmarks file using the method corresponding to
+        the source format:
         - `bookmarks.parse_db()`, for a database file.
         - `bookmarks.parse_html()`, for a html file.
         - `bookmarks.parse_json()`, for a json file.
@@ -341,9 +342,9 @@ class BookmarksParser(DBMixin, HTMLMixin, JSONMixin):
     def _prepare_filepaths(self):
         """Takes in filepath, and creates the following filepaths:
         -temp_filepath: filepath used for temporary file created by
-         format_html_file() and format_json_file() functions.
+         format_html_file() and format_json_file() methods.
         -output_filepath: output filepath used by the save_to_**(DB/HTML/JSON)
-         functions to save the converted data."""
+         methods to save the converted data into a file."""
         dirname = os.path.dirname(self.filepath)
         filename = os.path.basename(self.filepath)
         self.output_filepath = dirname + "/output_" + filename
