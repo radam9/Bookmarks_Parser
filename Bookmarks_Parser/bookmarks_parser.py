@@ -8,7 +8,7 @@ in the tests/data folder.
 The HTML files supported are Netscape-Bookmark files from either Chrome or
 Firefox.
 
-The JSON files supported are the Chrome bookmarks file, the Firefox 
+The JSON files supported are the Chrome bookmarks file, the Firefox
 .json bookmarks export file, and the custom json file created by this package"""
 
 # Use of this source code is governed by the MIT license.
@@ -24,11 +24,8 @@ from bs4 import BeautifulSoup, Tag
 from models import (
     Base,
     Bookmark,
-    Folder,
     HTMLBookmark,
     JSONBookmark,
-    Node,
-    Url,
     create_engine,
     sessionmaker,
 )
@@ -184,7 +181,7 @@ class HTMLMixin:
 
     def convert_to_html(self):
         """Convert the imported bookmarks to HTML."""
-        header = """<!DOCTYPE NETSCAPE-Bookmark-file-1>\n<!-- This is an automatically generated file.\n     It will be read and overwritten.\n     DO NOT EDIT! -->\n<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">\n<TITLE>Bookmarks</TITLE>\n<H1>Bookmarks Menu</H1>\n<DL><p>\n"""
+        header = """<!DOCTYPE NETSCAPE-Bookmark-file-1>\n<!-- This is an automatically generated file.\n     It will be read and overwritten.\n     DO NOT EDIT! -->\n<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">\n<TITLE>Bookmarks</TITLE>\n<H1>Bookmarks Menu</H1>\n\n<DL><p>\n"""
         footer = "</DL>"
 
         self.stack = self.tree.children[::-1]
@@ -340,6 +337,8 @@ class BookmarksParser(DBMixin, HTMLMixin, JSONMixin):
         self.stack = None
         self.stack_item = None
         self.tree = None
+        self.temp_filepath = None
+        self.output_filepath = None
 
     def _prepare_filepaths(self, filepath):
         """Takes in filepath, and creates the following filepaths:
@@ -408,13 +407,13 @@ class BookmarksParser(DBMixin, HTMLMixin, JSONMixin):
 # the conversion from JSON to JSON and from HTML to HTML as the file has the
 # same name.
 
+# [x] remove unnecessary imports.
+
 # [/] Try to create a unified iteration function, that converts from any form
 # (DB/HTML/JSON) to any form (DB/HTML/JSON)
 # NOTE: Does not seems possible
 
 # [] add proper testing for the entire package.
-
-# [] remove unnecessary imports.
 
 # [] add proper indentations to the exported HTML file.
 
