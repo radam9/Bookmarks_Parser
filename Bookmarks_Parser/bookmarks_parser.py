@@ -34,10 +34,9 @@ from models import (
 class DBMixin:
     """Mixing containing all the DB related functions."""
 
-    def from_db(self, filepath):
+    def parse_db(self):
         """Import the DB bookmarks file into self.tree as an object."""
-        self._prepare_filepaths(filepath)
-        database_path = "sqlite:///" + filepath
+        database_path = "sqlite:///" + self.filepath
         engine = create_engine(database_path)
         Session = sessionmaker(bind=engine)
         session = Session()
@@ -86,11 +85,10 @@ class DBMixin:
 class HTMLMixin:
     """Mixing containing all the HTML related functions."""
 
-    def from_html(self, filepath):
+    def parse_html(self):
         """Imports the HTML Bookmarks file into self.tree as a modified soup
         object using the TreeBuilder class HTMLBookmark, which adds property
         access to the html attributes of the soup object."""
-        self._prepare_filepaths(filepath)
         self.format_html_file(filepath, self.temp_filepath)
         with open(self.temp_filepath, "r") as file_:
             soup = BeautifulSoup(
@@ -231,11 +229,10 @@ class HTMLMixin:
 class JSONMixin:
     """Mixing containing all the JSON related functions."""
 
-    def from_json(self, filepath):
+    def parse_json(self):
         """Imports the JSON Bookmarks file into self.tree as a
         JSONBookmark object."""
-        self._prepare_filepaths(filepath)
-        self.format_json_file(filepath, self.temp_filepath)
+        self.format_json_file(self.filepath, self.temp_filepath)
         # with object_hook the json tree is loaded as JSONBookmark object tree.
         with open(self.temp_filepath, "r") as file_:
             self.tree = json.load(
@@ -243,7 +240,7 @@ class JSONMixin:
             )
         os.remove(self.temp_filepath)
         if self.tree.source == "Chrome":
-            self._add_index_and_id()
+            self._add_index()
 
     @staticmethod
     def _json_to_object(jdict):
@@ -314,11 +311,12 @@ class BookmarksParser(DBMixin, HTMLMixin, JSONMixin):
     Iteration and Stack.
 
     Usage:
-    1- Instantiate a class `bookmarks = BookmarksParser()`
-    2- Import the bookmark file using any of the import methods:
-        - `bookmarks.from_db(filepath)`, for a database file.
-        - `bookmarks.from_html(filepath)`, for a html file.
-        - `bookmarks.from_json(filepath)`, for a json file.
+    1- Instantiate a class and Import the bookmark file by passing in the
+        filepath when instantiating `bookmarks = BookmarksParser(filepath)`.
+    2- Parse the file using the method corresponding to the source format:
+        - `bookmarks.parse_db()`, for a database file.
+        - `bookmarks.parse_html()`, for a html file.
+        - `bookmarks.parse_json()`, for a json file.
     3- Convert the data using any of the convert methods:
         - `bookmarks.convert_to_db()`, convert to database.
         - `bookmarks.convert_to_html()`, convert to html.
@@ -332,22 +330,22 @@ class BookmarksParser(DBMixin, HTMLMixin, JSONMixin):
         - `bookmarks.save_to_json(), if the data was converted to json format.
     """
 
-    def __init__(self):
+    def __init__(self, filepath):
         self.bookmarks = None
         self.stack = None
         self.stack_item = None
         self.tree = None
-        self.temp_filepath = None
-        self.output_filepath = None
+        self.filepath = filepath
+        self._prepare_filepaths()
 
-    def _prepare_filepaths(self, filepath):
+    def _prepare_filepaths(self):
         """Takes in filepath, and creates the following filepaths:
         -temp_filepath: filepath used for temporary file created by
          format_html_file() and format_json_file() functions.
         -output_filepath: output filepath used by the save_to_**(DB/HTML/JSON)
          functions to save the converted data."""
-        dirname = os.path.dirname(filepath)
-        filename = os.path.basename(filepath)
+        dirname = os.path.dirname(self.filepath)
+        filename = os.path.basename(self.filepath)
         self.output_filepath = dirname + "/output_" + filename
         self.temp_filepath = dirname + "/temp_" + filename
 
