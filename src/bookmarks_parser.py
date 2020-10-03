@@ -21,7 +21,7 @@ import time
 
 from bs4 import BeautifulSoup, Tag
 
-from models import (
+from .models import (
     Base,
     Bookmark,
     HTMLBookmark,
