@@ -412,6 +412,12 @@ class BookmarksParser(DBMixin, HTMLMixin, JSONMixin):
 # (DB/HTML/JSON) to any form (DB/HTML/JSON)
 # NOTE: Does not seems possible
 
+# [] How to convert the python application I am creating into a package
+# while I am developing it? The main reason is to properly set the imports
+# and have an easier way of testing and debugging.
+# [] How do you go about developing a python package from scratch? how do you
+# start? structure, venv, pipenv, poetry or someother way?s
+
 # [] add proper testing for the entire package.
 
 # [] add proper indentations to the exported HTML file.
