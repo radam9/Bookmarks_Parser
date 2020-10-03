@@ -1,4 +1,4 @@
-from Bookmarks_Parser.models import JSONBookmark
+from src.models import JSONBookmark
 
 from conftest import (
     folder_chrome,

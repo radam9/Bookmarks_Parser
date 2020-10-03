@@ -1,4 +1,4 @@
-from Bookmarks_Parser.models import HTMLBookmark
+from src.models import HTMLBookmark
 
 from conftest import folder_custom, url_custom
 
