@@ -219,15 +219,6 @@ class BookmarksParserMixin:
         with open(output_file, "w", encoding="Utf-8") as file_:
             json.dump(self.bookmarks, file_, ensure_ascii=False)
 
-    def convert_to_json_using_encoder(self):
-        """Converts the bookmarks tree into JSON, using the `json.dump()`
-        while overriding the `default()` function located inside JSONEncoder
-        with the `self.default()` method by passing it in as a parameter.
-        NOTE: This method is slower than the iteration convert_to_json()"""
-        output_file = os.path.splitext(self.new_filepath)[0] + ".json"
-        with open(output_file, "w", encoding="Utf-8") as file_:
-            json.dump(obj=self.tree, fp=file_, ensure_ascii=False, default=self.default)
-
     def _add_index(self):
         """Add index to each element if tree source is HTML or JSON(Chrome)"""
         stack = [self.tree]
@@ -237,22 +228,6 @@ class BookmarksParserMixin:
                 child.index = i
                 if child.type == "folder":
                     stack.append(child)
-
-    @staticmethod
-    def default(jobj):
-        """JSON Bookmarks Serializing function,
-        passed into `json.dump()` to serialize the JSONBookmark Objects
-        into a dictionary"""
-        bookmarks = (Bookmark, Folder, Url, Node, JSONBookmark, HTMLBookmark)
-        if isinstance(jobj, bookmarks):
-            if jobj.type == "folder":
-                obj = jobj.create_folder_as_json()
-                obj["children"].extend(jobj.children)
-                return obj
-            elif jobj.type == "url":
-                obj = jobj.create_url_as_json()
-                return obj
-        return json.JSONEncoder.default(o=jobj)
 
 
 class BookmarksParserIteration(BookmarksParserMixin):
@@ -384,6 +359,11 @@ class BookmarksParserIteration(BookmarksParserMixin):
 # NOTE: No need since the number of times it is executed in this app isn't that
 # high
 
+# [x] iterate_folder_db() will currently not work due to the lack of
+# index and parent_id, and a mismatch of the items read and added to the stack.
+
+# [x] check iterate_folder_html() possible bug when folder is empty.
+
 # [/] Try to create a unified iteration function, that converts from any form
 # (DB/HTML/JSON) to any form (DB/HTML/JSON)
 # NOTE: Does not seems possible
@@ -393,13 +373,6 @@ class BookmarksParserIteration(BookmarksParserMixin):
 
 # [] check if I need to split the BookmarksParserMixin into different Mixins.
 
-# [] iteration/recursion functions take in an extra argument "addon"
-# that takes a function as input, it is later used to run a function
-# _add_index if it is provided. as follows:
-# add_index = function if function else None
-# NOTE: the stack_item and index needs to be bound to self (self.stack_item)
-# and (self.index) for this way to work
-
 # [] Likewise there should be a sort of switch that toggles whether it is
 # required to add parent_id to the items or not (only if converting to DB)
 
@@ -407,13 +380,18 @@ class BookmarksParserIteration(BookmarksParserMixin):
 # format_html_file() if I read more into BS4 and its options
 # custom parser / TreeBuilder / Soupstrainer / Tag class
 
-# [] check iterate_folder_html() possible bug when folder is empty.
-
-# [] different way to create a HTML document from an Object.
-
-# [] iterate_folder_db() will currently not work due to the lack of
-# index and parent_id, and a mismatch of the items read and added to the stack.
-
 # [] in line format_json_file in thr "checksum" branch modified the generator
 # from: "children": [folder for folder in tree.get("roots").values()],
 # to: "children": list(tree.get("roots").values(),
+
+# [] delete temporary modified html/json files after they are read by
+#  BeautifulSoup and json.load()
+
+# [] iteration/recursion functions take in an extra argument "addon"
+# that takes a function as input, it is later used to run a function
+# _add_index if it is provided. as follows:
+# add_index = function if function else None
+# NOTE: the stack_item and index needs to be bound to self (self.stack_item)
+# and (self.index) for this way to work
+
+# [] different way to create a HTML document from an Object.
