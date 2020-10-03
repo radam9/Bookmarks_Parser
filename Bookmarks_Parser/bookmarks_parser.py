@@ -3,13 +3,13 @@ from DB/HTML/JSON to DB/HTML/JSON.
 
 The DB files supported are custom (self made) sqlite database files,
 to see the exact format of the database you can check the .db file found
-in the test/data folder.
+in the tests/data folder.
 
 The HTML files supported are Netscape-Bookmark files from either Chrome or
 Firefox.
 
-The JSON files supported are the Chrome bookmarks file and the Firefox 
-.json bookmarks export file."""
+The JSON files supported are the Chrome bookmarks file, the Firefox 
+.json bookmarks export file, and the custom json file created by this package"""
 
 # Use of this source code is governed by the MIT license.
 __license__ = "MIT"
@@ -35,11 +35,11 @@ from models import (
 
 
 class DBMixin:
+    """Mixing containing all the DB related functions."""
+
     def from_db(self, filepath):
         """Import the DB bookmarks file into self.tree as an object."""
-        self.new_filepath = (
-            os.path.dirname(filepath) + "/output_" + os.path.basename(filepath)
-        )
+        self._prepare_filepaths(filepath)
         database_path = "sqlite:///" + filepath
         engine = create_engine(database_path)
         Session = sessionmaker(bind=engine)
@@ -76,7 +76,7 @@ class DBMixin:
 
     def save_to_db(self):
         """Function to export the bookmarks as SQLite3 DB."""
-        database_path = "sqlite:///" + os.path.splitext(self.new_filepath)[0] + ".db"
+        database_path = "sqlite:///" + os.path.splitext(self.output_filepath)[0] + ".db"
         engine = create_engine(database_path, echo=True)
         Session = sessionmaker(bind=engine)
         session = Session()
@@ -87,22 +87,22 @@ class DBMixin:
 
 
 class HTMLMixin:
+    """Mixing containing all the HTML related functions."""
+
     def from_html(self, filepath):
         """Imports the HTML Bookmarks file into self.tree as a modified soup
         object using the TreeBuilder class HTMLBookmark, which adds property
         access to the html attributes of the soup object."""
-        self.new_filepath = (
-            os.path.dirname(filepath) + "/output_" + os.path.basename(filepath)
-        )
-        self.format_html_file(filepath, self.new_filepath)
-        with open(self.new_filepath, "r") as file_:
+        self._prepare_filepaths(filepath)
+        self.format_html_file(filepath, self.temp_filepath)
+        with open(self.temp_filepath, "r") as file_:
             soup = BeautifulSoup(
                 markup=file_,
                 features="html.parser",
                 from_encoding="Utf-8",
                 element_classes={Tag: HTMLBookmark},
             )
-        os.remove(self.new_filepath)
+        os.remove(self.temp_filepath)
         HTMLBookmark.reset_id_counter()
         tree = soup.find("h3")
         self._restructure_root(tree)
@@ -226,25 +226,25 @@ class HTMLMixin:
 
     def save_to_html(self):
         """Export the bookmarks as HTML."""
-        output_file = os.path.splitext(self.new_filepath)[0] + ".html"
+        output_file = os.path.splitext(self.output_filepath)[0] + ".html"
         with open(output_file, "w", encoding="Utf-8") as file_:
             file_.write(self.bookmarks)
 
 
 class JSONMixin:
+    """Mixing containing all the JSON related functions."""
+
     def from_json(self, filepath):
         """Imports the JSON Bookmarks file into self.tree as a
         JSONBookmark object."""
-        self.new_filepath = (
-            os.path.dirname(filepath) + "/output_" + os.path.basename(filepath)
-        )
-        self.format_json_file(filepath, self.new_filepath)
+        self._prepare_filepaths(filepath)
+        self.format_json_file(filepath, self.temp_filepath)
         # with object_hook the json tree is loaded as JSONBookmark object tree.
-        with open(self.new_filepath, "r") as file_:
+        with open(self.temp_filepath, "r") as file_:
             self.tree = json.load(
                 file_, object_hook=self._json_to_object, encoding="Utf-8"
             )
-        os.remove(self.new_filepath)
+        os.remove(self.temp_filepath)
         if self.tree.source == "Chrome":
             self._add_index_and_id()
 
@@ -307,20 +307,50 @@ class JSONMixin:
 
     def save_to_json(self):
         """Function to export the bookmarks as JSON."""
-        output_file = os.path.splitext(self.new_filepath)[0] + ".json"
+        output_file = os.path.splitext(self.output_filepath)[0] + ".json"
         with open(output_file, "w", encoding="Utf-8") as file_:
             json.dump(self.bookmarks, file_, ensure_ascii=False)
 
 
 class BookmarksParser(DBMixin, HTMLMixin, JSONMixin):
     """Bookmarks Parser class that converts the bookmarks to DB/HTML/JSON, using
-    Iteration and Stack."""
+    Iteration and Stack.
+
+    Usage:
+    1- Instantiate a class `bookmarks = BookmarksParser()`
+    2- Import the bookmark file using any of the import methods:
+        - `bookmarks.from_db(filepath)`, for a database file.
+        - `bookmarks.from_html(filepath)`, for a html file.
+        - `bookmarks.from_json(filepath)`, for a json file.
+    3- Convert the data using any of the convert methods:
+        - `bookmarks.convert_to_db()`, convert to database.
+        - `bookmarks.convert_to_html()`, convert to html.
+        - `bookmarks.convert_to_json()`, convert to json.
+    4- At this point the bookmars are stored in the `bookmarks` attribute
+        accessible through `bookmarks.bookmarks`.
+    5- Export the bookmarks to a file using the export method corresponding
+        to the conversion method used.
+        - `bookmarks.save_to_db(), if the data was converted to database format.
+        - `bookmarks.save_to_html(), if the data was converted to html format.
+        - `bookmarks.save_to_json(), if the data was converted to json format.
+    """
 
     def __init__(self):
         self.bookmarks = None
         self.stack = None
         self.stack_item = None
         self.tree = None
+
+    def _prepare_filepaths(self, filepath):
+        """Takes in filepath, and creates the following filepaths:
+        -temp_filepath: filepath used for temporary file created by
+         format_html_file() and format_json_file() functions.
+        -output_filepath: output filepath used by the save_to_**(DB/HTML/JSON)
+         functions to save the converted data."""
+        dirname = os.path.dirname(filepath)
+        filename = os.path.basename(filepath)
+        self.output_filepath = dirname + "/output_" + filename
+        self.temp_filepath = dirname + "/temp_" + filename
 
     def _add_index(self):
         """Add index to each element if tree source is HTML or JSON(Chrome)"""
@@ -370,9 +400,27 @@ class BookmarksParser(DBMixin, HTMLMixin, JSONMixin):
 
 # [x] check if I need to split the BookmarksParserMixin into different Mixins.
 
+# [x] delete temporary modified html/json files after they are read by
+#  BeautifulSoup and json.load()
+
+# [x] conflict between file names by output file and temporary file created
+# for the HTML/JSON modification, it needs to be resolved because it prevents
+# the conversion from JSON to JSON and from HTML to HTML as the file has the
+# same name.
+
 # [/] Try to create a unified iteration function, that converts from any form
 # (DB/HTML/JSON) to any form (DB/HTML/JSON)
 # NOTE: Does not seems possible
+
+# [] add proper testing for the entire package.
+
+# [] remove unnecessary imports.
+
+# [] add proper indentations to the exported HTML file.
+
+# [] modify all file imports (path and filename) so they work on all OSs.
+
+# [] add a CLI interface for the package.
 
 # [] Try to create a unified recursive function, that converts from any form
 # (DB/HTML/JSON) to any form (DB/HTML/JSON)
@@ -383,9 +431,6 @@ class BookmarksParser(DBMixin, HTMLMixin, JSONMixin):
 # [] in line format_json_file in thr "checksum" branch modified the generator
 # from: "children": [folder for folder in tree.get("roots").values()],
 # to: "children": list(tree.get("roots").values(),
-
-# [] delete temporary modified html/json files after they are read by
-#  BeautifulSoup and json.load()
 
 # [] iteration/recursion functions take in an extra argument "addon"
 # that takes a function as input, it is later used to run a function
