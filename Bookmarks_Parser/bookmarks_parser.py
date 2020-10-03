@@ -34,10 +34,7 @@ from models import (
 )
 
 
-class BookmarksParserMixin:
-    """Mixin containing all the core Bookmarks Parser functionality, which is
-    later inherited by either the Iteration or Recursion parser."""
-
+class DBMixin:
     def from_db(self, filepath):
         """Import the DB bookmarks file into self.tree as an object."""
         self.new_filepath = (
@@ -48,6 +45,34 @@ class BookmarksParserMixin:
         Session = sessionmaker(bind=engine)
         session = Session()
         self.tree = session.query(Bookmark).get(1)
+
+    def convert_to_db(self):
+        """Convert the imported bookmarks to database objects."""
+        self.bookmarks = []
+        self.stack = [self.tree]
+
+        while self.stack:
+            self.stack_item = self.stack.pop()
+            self.iterate_folder_db()
+
+    def iterate_folder_db(self):
+        """Iterate through each item in the hierarchy tree and create
+        a database object, appending any folders that contain children to
+        the stack for futher proccessing."""
+        folder = self.stack_item.create_folder_as_db()
+        self.bookmarks.append(folder)
+        parent_id = folder.id
+        for child in self.stack_item:
+            child.parent_id = parent_id
+            if child.type == "folder":
+                if child.children:
+                    self.stack.append(child)
+                else:
+                    folder = child.create_folder_as_db()
+                    self.bookmarks.append(folder)
+            else:
+                url = child.create_url_as_db()
+                self.bookmarks.append(url)
 
     def save_to_db(self):
         """Function to export the bookmarks as SQLite3 DB."""
@@ -60,6 +85,8 @@ class BookmarksParserMixin:
         session.bulk_save_objects(self.bookmarks)
         session.commit()
 
+
+class HTMLMixin:
     def from_html(self, filepath):
         """Imports the HTML Bookmarks file into self.tree as a modified soup
         object using the TreeBuilder class HTMLBookmark, which adds property
@@ -154,12 +181,56 @@ class BookmarksParserMixin:
                     self.tree.children.insert(0, tree.children.pop(i))
                     break
 
+    def convert_to_html(self):
+        """Convert the imported bookmarks to HTML."""
+        header = """<!DOCTYPE NETSCAPE-Bookmark-file-1>\n<!-- This is an automatically generated file.\n     It will be read and overwritten.\n     DO NOT EDIT! -->\n<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">\n<TITLE>Bookmarks</TITLE>\n<H1>Bookmarks Menu</H1>\n<DL><p>\n"""
+        footer = "</DL>"
+
+        self.stack = self.tree.children[::-1]
+        self.proccessed = []
+
+        while self.stack:
+            self.stack_item = self.stack.pop()
+            folder = self.iterate_folder_html()
+            if not folder:
+                continue
+            placeholder = f"<folder{self.stack_item.id}>"
+            if self.proccessed and (placeholder in self.proccessed[-1]):
+                self.proccessed[-1] = self.proccessed[-1].replace(placeholder, folder)
+            else:
+                self.proccessed.append(folder)
+
+        temp = [header]
+        temp.extend(self.proccessed)
+        temp.append(footer)
+        self.bookmarks = "".join(temp)
+
+    def iterate_folder_html(self):
+        """Iterate through each item in the hierarchy tree and convert it to
+        HTML. If a folder has children, it is added to the stack and a
+        placeholder is left in its place so it can be inserted back to its
+        position after processing."""
+        folder = [self.stack_item.create_folder_as_html(), "<DL><p>\n"]
+        list_end = "</DL><p>\n"
+        for child in self.stack_item:
+            if child.type == "folder":
+                item = f"<folder{child.id}>"
+                self.stack.append(child)
+            else:
+                item = child.create_url_as_html()
+            folder.append(item)
+        folder.append(list_end)
+        result = "".join(folder)
+        return result
+
     def save_to_html(self):
         """Export the bookmarks as HTML."""
         output_file = os.path.splitext(self.new_filepath)[0] + ".html"
         with open(output_file, "w", encoding="Utf-8") as file_:
             file_.write(self.bookmarks)
 
+
+class JSONMixin:
     def from_json(self, filepath):
         """Imports the JSON Bookmarks file into self.tree as a
         JSONBookmark object."""
@@ -213,102 +284,6 @@ class BookmarksParserMixin:
         with open(output_filepath, "w", encoding="Utf-8") as file_:
             json.dump(tree, file_, ensure_ascii=False)
 
-    def save_to_json(self):
-        """Function to export the bookmarks as JSON."""
-        output_file = os.path.splitext(self.new_filepath)[0] + ".json"
-        with open(output_file, "w", encoding="Utf-8") as file_:
-            json.dump(self.bookmarks, file_, ensure_ascii=False)
-
-    def _add_index(self):
-        """Add index to each element if tree source is HTML or JSON(Chrome)"""
-        stack = [self.tree]
-        while stack:
-            stack_item = stack.pop()
-            for i, child in enumerate(stack_item, 0):
-                child.index = i
-                if child.type == "folder":
-                    stack.append(child)
-
-
-class BookmarksParserIteration(BookmarksParserMixin):
-    """Bookmarks Parser class that converts the bookmarks to DB/HTML/JSON, using
-    Iteration and Stack."""
-
-    def __init__(self):
-        self.bookmarks = None
-        self.stack = None
-        self.stack_item = None
-
-    def convert_to_db(self):
-        """Convert the imported bookmarks to database objects."""
-        self.bookmarks = []
-        self.stack = [self.tree]
-
-        while self.stack:
-            self.stack_item = self.stack.pop()
-            self.iterate_folder_db()
-
-    def iterate_folder_db(self):
-        """Iterate through each item in the hierarchy tree and create
-        a database object, appending any folders that contain children to
-        the stack for futher proccessing."""
-        folder = self.stack_item.create_folder_as_db()
-        self.bookmarks.append(folder)
-        parent_id = folder.id
-        for child in self.stack_item:
-            child.parent_id = parent_id
-            if child.type == "folder":
-                if child.children:
-                    self.stack.append(child)
-                else:
-                    folder = child.create_folder_as_db()
-                    self.bookmarks.append(folder)
-            else:
-                url = child.create_url_as_db()
-                self.bookmarks.append(url)
-
-    def convert_to_html(self):
-        """Convert the imported bookmarks to HTML."""
-        header = """<!DOCTYPE NETSCAPE-Bookmark-file-1>\n<!-- This is an automatically generated file.\n     It will be read and overwritten.\n     DO NOT EDIT! -->\n<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">\n<TITLE>Bookmarks</TITLE>\n<H1>Bookmarks Menu</H1>\n<DL><p>\n"""
-        footer = "</DL>"
-
-        self.stack = self.tree.children[::-1]
-        self.proccessed = []
-
-        while self.stack:
-            self.stack_item = self.stack.pop()
-            folder = self.iterate_folder_html()
-            if not folder:
-                continue
-            placeholder = f"<folder{self.stack_item.id}>"
-            if self.proccessed and (placeholder in self.proccessed[-1]):
-                self.proccessed[-1] = self.proccessed[-1].replace(placeholder, folder)
-            else:
-                self.proccessed.append(folder)
-
-        temp = [header]
-        temp.extend(self.proccessed)
-        temp.append(footer)
-        self.bookmarks = "".join(temp)
-
-    def iterate_folder_html(self):
-        """Iterate through each item in the hierarchy tree and convert it to
-        HTML. If a folder has children, it is added to the stack and a
-        placeholder is left in its place so it can be inserted back to its
-        position after processing."""
-        folder = [self.stack_item.create_folder_as_html(), "<DL><p>\n"]
-        list_end = "</DL><p>\n"
-        for child in self.stack_item:
-            if child.type == "folder":
-                item = f"<folder{child.id}>"
-                self.stack.append(child)
-            else:
-                item = child.create_url_as_html()
-            folder.append(item)
-        folder.append(list_end)
-        result = "".join(folder)
-        return result
-
     def convert_to_json(self):
         """Convert the imported bookmarks to JSON."""
         self.stack = []
@@ -327,6 +302,33 @@ class BookmarksParserIteration(BookmarksParserMixin):
                 else:
                     item = child.create_url_as_json()
                 children.append(item)
+
+    def save_to_json(self):
+        """Function to export the bookmarks as JSON."""
+        output_file = os.path.splitext(self.new_filepath)[0] + ".json"
+        with open(output_file, "w", encoding="Utf-8") as file_:
+            json.dump(self.bookmarks, file_, ensure_ascii=False)
+
+
+class BookmarksParser(DBMixin, HTMLMixin, JSONMixin):
+    """Bookmarks Parser class that converts the bookmarks to DB/HTML/JSON, using
+    Iteration and Stack."""
+
+    def __init__(self):
+        self.bookmarks = None
+        self.stack = None
+        self.stack_item = None
+        self.tree = None
+
+    def _add_index(self):
+        """Add index to each element if tree source is HTML or JSON(Chrome)"""
+        stack = [self.tree]
+        while stack:
+            stack_item = stack.pop()
+            for i, child in enumerate(stack_item, 0):
+                child.index = i
+                if child.type == "folder":
+                    stack.append(child)
 
 
 # [X] Chrome JSON bookmarks don't have index
@@ -364,6 +366,8 @@ class BookmarksParserIteration(BookmarksParserMixin):
 
 # [x] check iterate_folder_html() possible bug when folder is empty.
 
+# [x] check if I need to split the BookmarksParserMixin into different Mixins.
+
 # [/] Try to create a unified iteration function, that converts from any form
 # (DB/HTML/JSON) to any form (DB/HTML/JSON)
 # NOTE: Does not seems possible
@@ -371,14 +375,8 @@ class BookmarksParserIteration(BookmarksParserMixin):
 # [] Try to create a unified recursive function, that converts from any form
 # (DB/HTML/JSON) to any form (DB/HTML/JSON)
 
-# [] check if I need to split the BookmarksParserMixin into different Mixins.
-
 # [] Likewise there should be a sort of switch that toggles whether it is
 # required to add parent_id to the items or not (only if converting to DB)
-
-# [] Maybe its possible to completely remove the string/regex substitution in
-# format_html_file() if I read more into BS4 and its options
-# custom parser / TreeBuilder / Soupstrainer / Tag class
 
 # [] in line format_json_file in thr "checksum" branch modified the generator
 # from: "children": [folder for folder in tree.get("roots").values()],
@@ -395,3 +393,7 @@ class BookmarksParserIteration(BookmarksParserMixin):
 # and (self.index) for this way to work
 
 # [] different way to create a HTML document from an Object.
+
+# [] Maybe its possible to completely remove the string/regex substitution in
+# format_html_file() if I read more into BS4 and its options
+# custom parser / TreeBuilder / Soupstrainer / Tag class
