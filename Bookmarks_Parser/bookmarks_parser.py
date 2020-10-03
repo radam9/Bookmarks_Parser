@@ -102,6 +102,7 @@ class HTMLMixin:
                 from_encoding="Utf-8",
                 element_classes={Tag: HTMLBookmark},
             )
+        os.remove(self.new_filepath)
         HTMLBookmark.reset_id_counter()
         tree = soup.find("h3")
         self._restructure_root(tree)
@@ -243,6 +244,7 @@ class JSONMixin:
             self.tree = json.load(
                 file_, object_hook=self._json_to_object, encoding="Utf-8"
             )
+        os.remove(self.new_filepath)
         if self.tree.source == "Chrome":
             self._add_index_and_id()
 
