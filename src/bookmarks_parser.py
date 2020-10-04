@@ -89,7 +89,7 @@ class HTMLMixin:
         """Imports the HTML Bookmarks file into self.tree as a modified soup
         object using the TreeBuilder class HTMLBookmark, which adds property
         access to the html attributes of the soup object."""
-        self.format_html_file(filepath, self.temp_filepath)
+        self.format_html_file(self.filepath, self.temp_filepath)
         with open(self.temp_filepath, "r") as file_:
             soup = BeautifulSoup(
                 markup=file_,
@@ -417,6 +417,10 @@ class BookmarksParser(DBMixin, HTMLMixin, JSONMixin):
 # and have an easier way of testing and debugging.
 # [] How do you go about developing a python package from scratch? how do you
 # start? structure, venv, pipenv, poetry or someother way?s
+
+# [] use src or bookmarks_parser
+
+# [] research names for package/library/module
 
 # [] add proper testing for the entire package.
 
