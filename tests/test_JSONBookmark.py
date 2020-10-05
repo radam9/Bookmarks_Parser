@@ -1,14 +1,5 @@
 from src.models import JSONBookmark
 
-from conftest import (
-    folder_chrome,
-    folder_custom,
-    folder_firefox,
-    url_chrome,
-    url_custom,
-    url_firefox,
-)
-
 
 def test_JSONBookmark_url_chrome(url_chrome):
     url = JSONBookmark(**url_chrome)

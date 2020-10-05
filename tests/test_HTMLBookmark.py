@@ -1,7 +1,5 @@
 from src.models import HTMLBookmark
 
-from conftest import folder_custom, url_custom
-
 
 def test_HTMLBookmark_url_custom(url_custom):
     url = HTMLBookmark(name="a", attrs=url_custom)
