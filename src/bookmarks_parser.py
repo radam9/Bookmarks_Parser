@@ -235,9 +235,7 @@ class JSONMixin:
         self.format_json_file(self.filepath, self.temp_filepath)
         # with object_hook the json tree is loaded as JSONBookmark object tree.
         with open(self.temp_filepath, "r") as file_:
-            self.tree = json.load(
-                file_, object_hook=self._json_to_object, encoding="Utf-8"
-            )
+            self.tree = json.load(file_, object_hook=self._json_to_object)
         os.remove(self.temp_filepath)
         if self.tree.source == "Chrome":
             self._add_index()
