@@ -1,4 +1,60 @@
+import json
+from pathlib import Path
+
 import pytest
+from src.models import Base, Bookmark, create_engine, sessionmaker
+
+ROOT_DIR = Path(__file__).resolve().parent.parent
+DATA_DIR = ROOT_DIR.joinpath("data")
+
+
+@pytest.fixture
+def source_bookmark_files():
+    files = {str(x.name): str(x) for x in DATA_DIR.glob("bookmarks_*")}
+    return files
+
+
+@pytest.fixture
+def result_bookmark_files():
+    files = {str(x.name): str(x) for x in DATA_DIR.glob("from_*")}
+    return files
+
+
+@pytest.fixture
+def get_dates_from_db():
+    def _function(db_path, source):
+        database_path = "sqlite:///" + db_path
+        engine = create_engine(database_path)
+        Session = sessionmaker(bind=engine)
+        session = Session()
+        root_date = session.query(Bookmark).filter_by(title="root").one().date_added
+        if source == "Chrome":
+            folder_date = (
+                session.query(Bookmark)
+                .filter_by(title="Other Bookmarks")
+                .one()
+                .date_added
+            )
+        elif source == "Firefox":
+            folder_date = (
+                session.query(Bookmark)
+                .filter_by(title="Bookmarks Menu")
+                .one()
+                .date_added
+            )
+        return root_date, folder_date
+
+    return _function
+
+
+@pytest.fixture
+def read_json():
+    def _function(filepath):
+        with open(filepath, "r", encoding="Utf-8") as file_:
+            jsondata = json.load(file_)
+        return jsondata
+
+    return _function
 
 
 @pytest.fixture
