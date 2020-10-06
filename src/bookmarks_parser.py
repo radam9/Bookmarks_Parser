@@ -3,10 +3,10 @@ from DB/HTML/JSON to DB/HTML/JSON.
 
 The DB files supported are custom (self made) sqlite database files,
 to see the exact format of the database you can check the .db file found
-in the tests/data folder.
+in the data folder.
 
 The HTML files supported are Netscape-Bookmark files from either Chrome or
-Firefox.
+Firefox. The output HTML files adhere to the firefox format.
 
 The JSON files supported are the Chrome bookmarks file, the Firefox
 .json bookmarks export file, and the custom json file created by this package"""
