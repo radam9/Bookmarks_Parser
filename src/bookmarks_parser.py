@@ -120,31 +120,26 @@ class HTMLMixin:
         :type filepath: str
         :param output_filepath: absolute path and name for output file.
         :type output_filepath: str"""
-        with open(filepath, "r") as file_:
-            lines = iter(file_.readlines())
+        with open(filepath, "r") as input_file, open(
+            output_filepath, "w"
+        ) as output_file:
+            # regex to select an entire H1/H3/A HTML element
+            element = re.compile(r"(<(H1|H3|A))(.*?(?=>))>(.*)(<\/\2>)\n")
 
-        # regex to select an entire H1/H3/A HTML element
-        element = re.compile(r"(<(H1|H3|A))(.*?(?=>))>(.*)(<\/\2>)\n")
-
-        # TODO: maybe change the list comprehensions to Generator Comprehension
-        # or some other method for better efficiency (time/memory)
-
-        lines1 = iter(element.sub(r'\1\3 TITLE="\4">\5', line) for line in lines)
-        lines2 = iter(
-            line.replace("<DT>", "") for line in lines1 if "<DL><p>" not in line
-        )
-        lines3 = iter(
-            line.replace("<H1", "<H3")
-            .replace("</H1>", "")
-            .replace("</H3>", "")
-            .replace("</DL><p>\n", "</H3>")
-            .replace("\n", "")
-            .strip()
-            for line in lines2
-        )
-
-        with open(output_filepath, "w") as file_:
-            file_.writelines(lines3)
+            for line in input_file:
+                if "<DL><p>" in line:
+                    continue
+                line = element.sub(r'\1\3 TITLE="\4">\5', line)
+                line = (
+                    line.replace("<DT>", "")
+                    .replace("<H1", "<H3")
+                    .replace("</H1>", "")
+                    .replace("</H3>", "")
+                    .replace("</DL><p>\n", "</H3>")
+                    .replace("\n", "")
+                    .strip()
+                )
+                output_file.write(line)
 
     def _restructure_root(self, tree):
         """Restructure the root of the HTML parsed tree to allow for an easier
