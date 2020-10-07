@@ -190,13 +190,8 @@ class HTMLMixin:
         while self.stack:
             self.stack_item = self.stack.pop()
             folder = self.iterate_folder_html()
-            if not folder:
-                continue
-            placeholder = f"<folder{self.stack_item.id}>"
-            if body and (placeholder in body[-1]):
-                body[-1] = body[-1].replace(placeholder, folder)
-            else:
-                body.append(folder)
+            if folder:
+                self._create_placeholder(body, folder)
 
         self.bookmarks = "".join([header, *body, footer])
 
@@ -217,6 +212,13 @@ class HTMLMixin:
         folder.append(list_end)
         result = "".join(folder)
         return result
+
+    def _create_placeholder(self, body, folder):
+        placeholder = f"<folder{self.stack_item.id}>"
+        if body and (placeholder in body[-1]):
+            body[-1] = body[-1].replace(placeholder, folder)
+        else:
+            body.append(folder)
 
     def save_to_html(self):
         """Export the bookmarks as HTML."""
