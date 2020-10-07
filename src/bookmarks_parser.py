@@ -185,7 +185,7 @@ class HTMLMixin:
         footer = "</DL>"
 
         self.stack = self.tree.children[::-1]
-        self.proccessed = []
+        body = []
 
         while self.stack:
             self.stack_item = self.stack.pop()
@@ -193,15 +193,12 @@ class HTMLMixin:
             if not folder:
                 continue
             placeholder = f"<folder{self.stack_item.id}>"
-            if self.proccessed and (placeholder in self.proccessed[-1]):
-                self.proccessed[-1] = self.proccessed[-1].replace(placeholder, folder)
+            if body and (placeholder in body[-1]):
+                body[-1] = body[-1].replace(placeholder, folder)
             else:
-                self.proccessed.append(folder)
+                body.append(folder)
 
-        temp = [header]
-        temp.extend(self.proccessed)
-        temp.append(footer)
-        self.bookmarks = "".join(temp)
+        self.bookmarks = "".join([header, *body, footer])
 
     def iterate_folder_html(self):
         """Iterate through each item in the hierarchy tree and convert it to
