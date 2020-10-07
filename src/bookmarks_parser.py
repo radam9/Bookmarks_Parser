@@ -266,6 +266,7 @@ class JSONMixin:
                 "children": list(tree.get("roots").values()),
             }
         elif tree.get("root"):
+            tree["title"] = "root"
             folders = {
                 "menu": "Bookmarks Menu",
                 "toolbar": "Bookmarks Toolbar",
