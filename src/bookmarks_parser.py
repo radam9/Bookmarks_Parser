@@ -49,9 +49,9 @@ class DBMixin:
 
         while self.stack:
             self.stack_item = self.stack.pop()
-            self.iterate_folder_db()
+            self._iterate_folder_db()
 
-    def iterate_folder_db(self):
+    def _iterate_folder_db(self):
         """Iterate through each item in the hierarchy tree and create
         a database object, appending any folders that contain children to
         the stack for futher proccessing."""
@@ -189,13 +189,13 @@ class HTMLMixin:
 
         while self.stack:
             self.stack_item = self.stack.pop()
-            folder = self.iterate_folder_html()
+            folder = self._iterate_folder_html()
             if folder:
                 self._create_placeholder(body, folder)
 
         self.bookmarks = "".join([header, *body, footer])
 
-    def iterate_folder_html(self):
+    def _iterate_folder_html(self):
         """Iterate through each item in the hierarchy tree and convert it to
         HTML. If a folder has children, it is added to the stack and a
         placeholder is left in its place so it can be inserted back to its
