@@ -20,15 +20,10 @@ import time
 from pathlib import Path
 
 from bs4 import BeautifulSoup, Tag
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
-from .models import (
-    Base,
-    Bookmark,
-    HTMLBookmark,
-    JSONBookmark,
-    create_engine,
-    sessionmaker,
-)
+from .models import Base, Bookmark, HTMLBookmark, JSONBookmark
 
 
 class DBMixin:
