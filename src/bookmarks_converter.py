@@ -1,4 +1,4 @@
-"""Bookmarks Parser, is a package that converts the webpage bookmarks
+"""Bookmarks Converter, is a package that converts the webpage bookmarks
 from DB/HTML/JSON to DB/HTML/JSON.
 
 The DB files supported are custom (self made) sqlite database files,
@@ -296,13 +296,12 @@ class JSONMixin:
             json.dump(self.bookmarks, file_, ensure_ascii=False)
 
 
-class BookmarksParser(DBMixin, HTMLMixin, JSONMixin):
-    """Bookmarks Parser class that converts the bookmarks to DB/HTML/JSON, using
-    Iteration and Stack.
+class BookmarksConverter(DBMixin, HTMLMixin, JSONMixin):
+    """Bookmarks Converter class that converts the bookmarks to DB/HTML/JSON, using Iteration and Stack.
 
     Usage:
     1- Instantiate a class and pass in the filepath:
-        - `bookmarks = BookmarksParser(filepath)`.
+        - `bookmarks = BookmarksConverter(filepath)`.
     2- Import and Parse the bookmarks file using the method corresponding to
         the source format:
         - `bookmarks.parse_db()`, for a database file.
@@ -312,7 +311,7 @@ class BookmarksParser(DBMixin, HTMLMixin, JSONMixin):
         - `bookmarks.convert_to_db()`, convert to database.
         - `bookmarks.convert_to_html()`, convert to html.
         - `bookmarks.convert_to_json()`, convert to json.
-    4- At this point the bookmars are stored in the `bookmarks` attribute
+    4- At this point the bookmarks are stored in the `bookmarks` attribute
         accessible through `bookmarks.bookmarks`.
     5- Export the bookmarks to a file using the export method corresponding
         to the conversion method used.

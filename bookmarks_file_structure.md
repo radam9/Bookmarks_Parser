@@ -170,9 +170,9 @@ Unix Epoch = Chrome Epoch - 11644473600000000
 
 ---
 
-## 5) Custom Json exported by this BookmarksParser
+## 5) Custom Json exported by this BookmarksConverter
 
-If you export your bookmarks as a .json file using this BookmarksParser package, you will get the json format will look as follows:
+If you export your bookmarks as a .json file using this BookmarksConverter package, you will get the json format will look as follows:
 
 1. #### Json folder Template
 

@@ -96,7 +96,7 @@ class Node:
         return url
 
     def create_folder(self, output_format):
-        """Part of an attempt to create a unified Bookmarks_Parser
+        """Part of an attempt to create a unified Bookmarks_Converter
         Iterator. Currently not used and can be removed"""
         formats = {
             "db": lambda: self.create_folder_as_db(),
@@ -106,7 +106,7 @@ class Node:
         return formats[output_format]()
 
     def create_url(self, output_format):
-        """Part of an attempt to create a unified Bookmarks_Parser
+        """Part of an attempt to create a unified Bookmarks_Converter
         Iterator. Currently not used and can be removed"""
         formats = {
             "db": lambda: self.create_url_as_db(),
