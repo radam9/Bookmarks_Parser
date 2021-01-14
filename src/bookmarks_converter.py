@@ -49,7 +49,7 @@ class DBMixin:
     def _iterate_folder_db(self):
         """Iterate through each item in the hierarchy tree and create
         a database object, appending any folders that contain children to
-        the stack for futher proccessing."""
+        the stack for further processing."""
         folder = self.stack_item.create_folder_as_db()
         self.bookmarks.append(folder)
         parent_id = folder.id
@@ -103,7 +103,7 @@ class HTMLMixin:
     @staticmethod
     def format_html_file(filepath, output_filepath):
         """Takes in an absolute path to a HTML Bookmarks file, it creates a new
-        Bookmarks file with the text "output_" prepeneded to the filename.
+        Bookmarks file with the text "output_" prepended to the filename.
         where;
         - The main "<H1>" tag is converted to "<H3>" and acts as the root folder
         - All "<DT>" tags are removed.
@@ -145,7 +145,7 @@ class HTMLMixin:
         root folders children.
 
         If the tree title is 'Bookmarks' we need to extract the 'Bookmarks bar'
-        folder and insert it at the beggining of the root children. Then we need
+        folder and insert it at the beginning of the root children. Then we need
         to rename the 'Bookmarks' folder to 'Other Bookmarks'."""
         self.tree = HTMLBookmark(
             name="h3",

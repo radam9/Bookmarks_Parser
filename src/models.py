@@ -1,13 +1,9 @@
 import itertools
-import json
 import time
 
-import sqlalchemy
 from bs4 import Tag
 from sqlalchemy import (
     Column,
-    Date,
-    DateTime,
     ForeignKey,
     Integer,
     String,
@@ -23,7 +19,7 @@ Base = declarative_base()
 
 
 class Node:
-    """Mixing class containing the methods used to create folders/urls in
+    """Mixin class containing the methods used to create folders/urls in
     different formats HTML/JSON/DB, used in the creation of new bookmark tree
     in a different format."""
 
@@ -129,7 +125,7 @@ class Node:
 
 class Bookmark(Base, Node):
     """Base model for the Url and Folder model.
-    (used for Single Table Inheritence)
+    (used for Single Table Inheritance)
     ...
     Attributes
     ----------

@@ -128,7 +128,7 @@ The `.json` file has a root folder, which has the following folders as children:
 
 ## 4) Chrome JSON Bookmarks file structure
 
-Chrome doesn't allow you to export or backup your bookmarks as a .json file, but you can get a copy of the .json file chrome stores you bookmarks in. Depending on your OS and browser (chrome/chromium), these are the locations of the file:
+Chrome doesn't allow you to export or backup your bookmarks as a .json file, but you can get a copy of the .json file chrome stores your bookmarks in. Depending on your OS and browser (chrome/chromium), these are the locations of the file:
 
 - `Linux [Chrome]` --> `~/.config/google-chrome`
 - `Linux [Chromium]` --> `~/.config/chromium`
