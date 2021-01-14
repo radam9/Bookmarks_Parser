@@ -1,7 +1,7 @@
 from filecmp import cmp
 from pathlib import Path
 
-from src.bookmarks_parser import BookmarksParser, DBMixin, HTMLMixin, JSONMixin
+from src.bookmarks_converter import BookmarksParser, DBMixin, HTMLMixin, JSONMixin
 from src.models import JSONBookmark
 
 
