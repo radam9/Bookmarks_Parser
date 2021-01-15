@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 import pytest
-from src.bookmarks_converter.models import Bookmark, create_engine, sessionmaker
+from bookmarks_converter.models import Bookmark, create_engine, sessionmaker
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT_DIR.joinpath("data")
