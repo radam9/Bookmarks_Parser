@@ -2,8 +2,11 @@
 name = "bookmarks-converter"
 version = "0.1.0"
 description = "Parse db/html/json bookmarks file from (Chrome - Firefox - Custom source) and convert it to db/html/json format."
-authors = ["Adam Saleh"]
+authors = ["Adam Saleh <radam9@gmail.com>"]
 license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/radam9/bookmarks_converter"
+repository = "https://github.com/radam9/bookmarks_converter"
 packages = [
     { include = "bookmarks_converter", from = "src" },
 ]
