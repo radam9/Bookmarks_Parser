@@ -1,4 +1,4 @@
-from src.models import HTMLBookmark
+from src.bookmarks_converter.models import HTMLBookmark
 
 
 def test_HTMLBookmark_url_custom(url_custom):

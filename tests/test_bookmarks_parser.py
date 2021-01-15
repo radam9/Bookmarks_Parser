@@ -1,8 +1,9 @@
 from filecmp import cmp
 from pathlib import Path
 
-from src.bookmarks_converter import BookmarksConverter, DBMixin, HTMLMixin, JSONMixin
-from src.models import JSONBookmark
+from src.bookmarks_converter import BookmarksConverter
+from src.bookmarks_converter.core import JSONMixin
+from src.bookmarks_converter.models import JSONBookmark
 
 
 # JSONMixin tests

@@ -4,6 +4,9 @@ version = "0.1.0"
 description = "Parse db/html/json bookmarks file from (Chrome - Firefox - Custom source) and convert it to db/html/json format."
 authors = ["Adam Saleh"]
 license = "MIT"
+packages = [
+    { include = "bookmarks_converter", from = "src" },
+]
 
 [tool.poetry.dependencies]
 python = "^3.8"
