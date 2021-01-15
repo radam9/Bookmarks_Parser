@@ -3,6 +3,7 @@ __pycache__
 .vscode
 .idea
 .pytest_cache
+.venv
 venv
 temp
 timing.py
