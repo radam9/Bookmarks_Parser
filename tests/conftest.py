@@ -23,7 +23,7 @@ def result_bookmark_files():
 @pytest.fixture
 def get_dates_from_db():
     def _function(db_path, source):
-        database_path = "sqlite:///" + db_path
+        database_path = "sqlite:///" + str(db_path)
         engine = create_engine(database_path)
         Session = sessionmaker(bind=engine)
         session = Session()
