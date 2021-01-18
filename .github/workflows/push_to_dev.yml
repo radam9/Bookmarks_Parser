@@ -1,0 +1,42 @@
+name: push-to-dev
+
+on:
+  push:
+    branches: [dev]
+
+jobs:
+  verify-build:
+    strategy:
+      matrix:
+        python-version: ["3.6", "3.7", "3.8", "3.9"]
+        os: [macos-latest, windows-latest, ubuntu-latest]
+
+    defaults:
+      run:
+        shell: bash
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install and configure Poetry
+        uses: snok/install-poetry@v1.1.1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+      # - name: Load cached venv
+      #   id: cached-poetry-dependencies
+      #   uses: actions/cache@v2
+      #   with:
+      #     path: .venv
+      #     key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+      - name: Install dependencies
+        run: poetry install
+        # if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+      - name: Run pytest
+        run: |
+          source $VENV
+          pytest -v
