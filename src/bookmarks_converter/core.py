@@ -85,7 +85,7 @@ class HTMLMixin:
         object using the TreeBuilder class HTMLBookmark, which adds property
         access to the html attributes of the soup object."""
         self.format_html_file(self.filepath, self.temp_filepath)
-        with open(self.temp_filepath, "r") as file_:
+        with open(self.temp_filepath, "r", encoding="utf-8") as file_:
             soup = BeautifulSoup(
                 markup=file_,
                 features="html.parser",
@@ -113,8 +113,8 @@ class HTMLMixin:
         :type filepath: str
         :param output_filepath: absolute path and name for output file.
         :type output_filepath: str"""
-        with open(filepath, "r") as input_file, open(
-            output_filepath, "w"
+        with open(filepath, "r", encoding="utf-8") as input_file, open(
+            output_filepath, "w", encoding="utf-8"
         ) as output_file:
             # regex to select an entire H1/H3/A HTML element
             element = re.compile(r"(<(H1|H3|A))(.*?(?=>))>(.*)(<\/\2>)\n")
@@ -211,7 +211,7 @@ class HTMLMixin:
     def save_to_html(self):
         """Export the bookmarks as HTML."""
         output_file = self.output_filepath.with_suffix(".html")
-        with open(output_file, "w", encoding="Utf-8") as file_:
+        with open(output_file, "w", encoding="utf-8") as file_:
             file_.write(self.bookmarks)
 
 
@@ -223,7 +223,7 @@ class JSONMixin:
         JSONBookmark object."""
         self.format_json_file(self.filepath, self.temp_filepath)
         # with object_hook the json tree is loaded as JSONBookmark object tree.
-        with open(self.temp_filepath, "r") as file_:
+        with open(self.temp_filepath, "r", encoding="utf-8") as file_:
             self.tree = json.load(file_, object_hook=self._json_to_object)
         self.temp_filepath.unlink()
         if self.tree.source == "Chrome":
@@ -241,7 +241,7 @@ class JSONMixin:
         parsing/converting.
         Exporting the result to a new JSON file (output_filepath) with
         a prefix of 'output_'."""
-        with open(filepath, "r", encoding="Utf-8") as file_:
+        with open(filepath, "r", encoding="utf-8") as file_:
             tree = json.load(file_)
 
         if tree.get("checksum"):
@@ -265,7 +265,7 @@ class JSONMixin:
             for child in tree.get("children"):
                 child["title"] = folders[child.get("title")]
 
-        with open(output_filepath, "w", encoding="Utf-8") as file_:
+        with open(output_filepath, "w", encoding="utf-8") as file_:
             json.dump(tree, file_, ensure_ascii=False)
 
     def convert_to_json(self):
@@ -290,7 +290,7 @@ class JSONMixin:
     def save_to_json(self):
         """Function to export the bookmarks as JSON."""
         output_file = self.output_filepath.with_suffix(".json")
-        with open(output_file, "w", encoding="Utf-8") as file_:
+        with open(output_file, "w", encoding="utf-8") as file_:
             json.dump(self.bookmarks, file_, ensure_ascii=False)
 
 
