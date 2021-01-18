@@ -64,7 +64,7 @@ def test_from_chrome_html_to_json(
     bookmarks.bookmarks["children"][1]["date_added"] = other_date
     bookmarks.save_to_json()
     output_file = bookmarks.output_filepath.with_suffix(".json")
-    assert cmp(result_file, output_file)
+    assert cmp(result_file, output_file, shallow=False)
     output_file.unlink()
 
 
@@ -80,7 +80,7 @@ def test_from_chrome_html_to_db(
     bookmarks.bookmarks[1].date_added = other_date
     bookmarks.save_to_db()
     output_file = bookmarks.output_filepath.with_suffix(".db")
-    assert cmp(result_file, output_file)
+    assert cmp(result_file, output_file, shallow=False)
     output_file.unlink()
 
 
@@ -91,7 +91,7 @@ def test_from_chrome_json_to_html(source_bookmark_files, result_bookmark_files):
     bookmarks.convert_to_html()
     bookmarks.save_to_html()
     output_file = bookmarks.output_filepath.with_suffix(".html")
-    assert cmp(result_file, output_file)
+    assert cmp(result_file, output_file, shallow=False)
     output_file.unlink()
 
 
@@ -104,7 +104,7 @@ def test_from_chrome_json_to_db(
     bookmarks.convert_to_db()
     bookmarks.save_to_db()
     output_file = bookmarks.output_filepath.with_suffix(".db")
-    assert cmp(result_file, output_file)
+    assert cmp(result_file, output_file, shallow=False)
     output_file.unlink()
 
 
@@ -124,7 +124,7 @@ def test_from_firefox_html_to_json(
     bookmarks.bookmarks["children"][0]["date_added"] = menu_date
     bookmarks.save_to_json()
     output_file = bookmarks.output_filepath.with_suffix(".json")
-    assert cmp(result_file, output_file)
+    assert cmp(result_file, output_file, shallow=False)
     output_file.unlink()
 
 
@@ -140,7 +140,7 @@ def test_from_firefox_html_to_db(
     bookmarks.bookmarks[13].date_added = menu_date
     bookmarks.save_to_db()
     output_file = bookmarks.output_filepath.with_suffix(".db")
-    assert cmp(result_file, output_file)
+    assert cmp(result_file, output_file, shallow=False)
     output_file.unlink()
 
 
@@ -151,7 +151,7 @@ def test_from_firefox_json_to_html(source_bookmark_files, result_bookmark_files)
     bookmarks.convert_to_html()
     bookmarks.save_to_html()
     output_file = bookmarks.output_filepath.with_suffix(".html")
-    assert cmp(result_file, output_file)
+    assert cmp(result_file, output_file, shallow=False)
     output_file.unlink()
 
 
@@ -164,5 +164,5 @@ def test_from_firefox_json_to_db(
     bookmarks.convert_to_db()
     bookmarks.save_to_db()
     output_file = bookmarks.output_filepath.with_suffix(".db")
-    assert cmp(result_file, output_file)
+    assert cmp(result_file, output_file, shallow=False)
     output_file.unlink()
