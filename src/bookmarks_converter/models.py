@@ -91,26 +91,6 @@ class Node:
         }
         return url
 
-    def create_folder(self, output_format):
-        """Part of an attempt to create a unified Bookmarks_Converter
-        Iterator. Currently not used and can be removed"""
-        formats = {
-            "db": lambda: self.create_folder_as_db(),
-            "html": lambda: self.create_folder_as_html(),
-            "json": lambda: self.create_folder_as_json(),
-        }
-        return formats[output_format]()
-
-    def create_url(self, output_format):
-        """Part of an attempt to create a unified Bookmarks_Converter
-        Iterator. Currently not used and can be removed"""
-        formats = {
-            "db": lambda: self.create_url_as_db(),
-            "html": lambda: self.create_url_as_html(),
-            "json": lambda: self.create_url_as_json(),
-        }
-        return formats[output_format]()
-
     def check_type(self, type_):
         if self.type != type_:
             raise TypeError(f"The item you are converting is not a {type_}")
@@ -201,7 +181,7 @@ class Folder(Bookmark):
         id of parent folder
     index : int
         current index in parent folder
-    urls : db relationship
+    children : db relationship
         urls contained in the folder"""
 
     __mapper_args__ = {"polymorphic_identity": "folder"}
