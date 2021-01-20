@@ -27,6 +27,7 @@ def get_dates_from_db():
         engine = create_engine(database_path, encoding="utf-8")
         Session = sessionmaker(bind=engine)
         session = Session()
+        bookmarks = session.query(Bookmark).order_by(Bookmark.id).all()
         root_date = session.query(Bookmark).filter_by(title="root").one().date_added
         if source == "Chrome":
             folder_date = (
@@ -42,7 +43,8 @@ def get_dates_from_db():
                 .one()
                 .date_added
             )
-        return root_date, folder_date
+        session.close()
+        return bookmarks, root_date, folder_date
 
     return _function
 
