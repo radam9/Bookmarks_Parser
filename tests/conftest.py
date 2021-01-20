@@ -24,7 +24,7 @@ def result_bookmark_files():
 def get_dates_from_db():
     def _function(db_path, source):
         database_path = "sqlite:///" + str(db_path)
-        engine = create_engine(database_path)
+        engine = create_engine(database_path, encoding="utf-8")
         Session = sessionmaker(bind=engine)
         session = Session()
         root_date = session.query(Bookmark).filter_by(title="root").one().date_added

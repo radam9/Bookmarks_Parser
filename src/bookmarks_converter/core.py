@@ -32,7 +32,7 @@ class DBMixin:
     def parse_db(self):
         """Import the DB bookmarks file into self.tree as an object."""
         database_path = "sqlite:///" + str(self.filepath)
-        engine = create_engine(database_path)
+        engine = create_engine(database_path, encoding="utf-8")
         Session = sessionmaker(bind=engine)
         session = Session()
         self.tree = session.query(Bookmark).get(1)
@@ -68,7 +68,7 @@ class DBMixin:
     def save_to_db(self):
         """Function to export the bookmarks as SQLite3 DB."""
         database_path = "sqlite:///" + str(self.output_filepath.with_suffix(".db"))
-        engine = create_engine(database_path, echo=True)
+        engine = create_engine(database_path, encoding="utf-8")
         Session = sessionmaker(bind=engine)
         session = Session()
         Base.metadata.create_all(engine)
