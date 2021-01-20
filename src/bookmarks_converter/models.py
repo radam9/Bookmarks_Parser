@@ -173,6 +173,18 @@ class Bookmark(Base, Node):
         session.delete(self)
         session.commit()
 
+    def __eq__(self, other):
+        if not isinstance(other, type(self)):
+            return NotImplemented
+        for self_attr, other_attr in zip(vars(self), vars(other)):
+            # skip if the attribute is '_sa_instance_state' which is in
+            # .__dict__ and vars(), since the object is a sqlalchemy object.
+            if self_attr.startswith("_"):
+                continue
+            if self.__getattribute__(self_attr) != other.__getattribute__(other_attr):
+                return False
+        return True
+
 
 class Folder(Bookmark):
     """Model representing bookmark folders

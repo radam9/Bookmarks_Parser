@@ -2,7 +2,9 @@ name: push-to-dev
 
 on:
   push:
-    branches: [dev]
+    branches: [master, dev, feature]
+  pull_request:
+    branches: [master, dev]
 
 jobs:
   verify-build:
@@ -38,5 +40,4 @@ jobs:
         # if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
       - name: Run pytest
         run: |
-          source $VENV
-          pytest -v
+          poetry run pytest -v
