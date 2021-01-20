@@ -1,4 +1,4 @@
-name: push-to-dev
+name: verify_build
 
 on:
   push:
