@@ -254,6 +254,7 @@ class JSONMixin:
                 "date_added": 0,
                 "children": list(tree.get("roots").values()),
             }
+            tree["children"][1]["name"] = "Other Bookmarks"
         elif tree.get("root"):
             tree["title"] = "root"
             folders = {

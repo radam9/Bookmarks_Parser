@@ -20,7 +20,7 @@ def test_format_json_file_chrome(source_bookmark_files, read_json):
 
     assert json_data.get("name") == "root"
     assert json_data.get("children")[0].get("name") == "Bookmarks bar"
-    assert json_data.get("children")[1].get("name") == "Other bookmarks"
+    assert json_data.get("children")[1].get("name") == "Other Bookmarks"
     output_file.unlink()
 
 
