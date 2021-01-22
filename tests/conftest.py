@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 import pytest
-from src.models import Base, Bookmark, create_engine, sessionmaker
+from bookmarks_converter.models import Bookmark, create_engine, sessionmaker
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT_DIR.joinpath("data")
@@ -23,10 +23,11 @@ def result_bookmark_files():
 @pytest.fixture
 def get_dates_from_db():
     def _function(db_path, source):
-        database_path = "sqlite:///" + db_path
-        engine = create_engine(database_path)
+        database_path = "sqlite:///" + str(db_path)
+        engine = create_engine(database_path, encoding="utf-8")
         Session = sessionmaker(bind=engine)
         session = Session()
+        bookmarks = session.query(Bookmark).order_by(Bookmark.id).all()
         root_date = session.query(Bookmark).filter_by(title="root").one().date_added
         if source == "Chrome":
             folder_date = (
@@ -42,7 +43,21 @@ def get_dates_from_db():
                 .one()
                 .date_added
             )
-        return root_date, folder_date
+        session.close()
+        return bookmarks, root_date, folder_date
+
+    return _function
+
+
+@pytest.fixture
+def create_class_instance():
+    def _function(data, class_):
+        instance = class_()
+        for key, value in data.items():
+            if key == "iconuri":
+                key = "icon_uri"
+            setattr(instance, key, value)
+        return instance
 
     return _function
 

@@ -1,4 +1,4 @@
-from src.models import JSONBookmark
+from bookmarks_converter.models import JSONBookmark
 
 
 def test_JSONBookmark_url_chrome(url_chrome):

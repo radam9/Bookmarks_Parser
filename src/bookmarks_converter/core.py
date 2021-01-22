@@ -31,8 +31,8 @@ class DBMixin:
 
     def parse_db(self):
         """Import the DB bookmarks file into self.tree as an object."""
-        database_path = "sqlite:///" + self.filepath
-        engine = create_engine(database_path)
+        database_path = "sqlite:///" + str(self.filepath)
+        engine = create_engine(database_path, encoding="utf-8")
         Session = sessionmaker(bind=engine)
         session = Session()
         self.tree = session.query(Bookmark).get(1)
@@ -67,10 +67,8 @@ class DBMixin:
 
     def save_to_db(self):
         """Function to export the bookmarks as SQLite3 DB."""
-        database_path = "sqlite:///" + str(
-            Path(self.output_filepath).with_suffix(".db")
-        )
-        engine = create_engine(database_path, echo=True)
+        database_path = "sqlite:///" + str(self.output_filepath.with_suffix(".db"))
+        engine = create_engine(database_path, encoding="utf-8")
         Session = sessionmaker(bind=engine)
         session = Session()
         Base.metadata.create_all(engine)
@@ -87,14 +85,14 @@ class HTMLMixin:
         object using the TreeBuilder class HTMLBookmark, which adds property
         access to the html attributes of the soup object."""
         self.format_html_file(self.filepath, self.temp_filepath)
-        with open(self.temp_filepath, "r") as file_:
+        with open(self.temp_filepath, "r", encoding="utf-8") as file_:
             soup = BeautifulSoup(
                 markup=file_,
                 features="html.parser",
                 from_encoding="Utf-8",
                 element_classes={Tag: HTMLBookmark},
             )
-        Path(self.temp_filepath).unlink()
+        self.temp_filepath.unlink()
         HTMLBookmark.reset_id_counter()
         tree = soup.find("h3")
         self._restructure_root(tree)
@@ -115,8 +113,8 @@ class HTMLMixin:
         :type filepath: str
         :param output_filepath: absolute path and name for output file.
         :type output_filepath: str"""
-        with open(filepath, "r") as input_file, open(
-            output_filepath, "w"
+        with open(filepath, "r", encoding="utf-8") as input_file, open(
+            output_filepath, "w", encoding="utf-8"
         ) as output_file:
             # regex to select an entire H1/H3/A HTML element
             element = re.compile(r"(<(H1|H3|A))(.*?(?=>))>(.*)(<\/\2>)\n")
@@ -171,7 +169,16 @@ class HTMLMixin:
 
     def convert_to_html(self):
         """Convert the imported bookmarks to HTML."""
-        header = """<!DOCTYPE NETSCAPE-Bookmark-file-1>\n<!-- This is an automatically generated file.\n     It will be read and overwritten.\n     DO NOT EDIT! -->\n<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">\n<TITLE>Bookmarks</TITLE>\n<H1>Bookmarks Menu</H1>\n\n<DL><p>\n"""
+        header = """<!DOCTYPE NETSCAPE-Bookmark-file-1>
+<!-- This is an automatically generated file.
+     It will be read and overwritten.
+     DO NOT EDIT! -->
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">
+<TITLE>Bookmarks</TITLE>
+<H1>Bookmarks Menu</H1>
+
+<DL><p>
+"""
         footer = "</DL>"
 
         self.stack = self.tree.children[::-1]
@@ -212,8 +219,8 @@ class HTMLMixin:
 
     def save_to_html(self):
         """Export the bookmarks as HTML."""
-        output_file = Path(self.output_filepath).with_suffix(".html")
-        with open(output_file, "w", encoding="Utf-8") as file_:
+        output_file = self.output_filepath.with_suffix(".html")
+        with open(output_file, "w", encoding="utf-8") as file_:
             file_.write(self.bookmarks)
 
 
@@ -225,9 +232,9 @@ class JSONMixin:
         JSONBookmark object."""
         self.format_json_file(self.filepath, self.temp_filepath)
         # with object_hook the json tree is loaded as JSONBookmark object tree.
-        with open(self.temp_filepath, "r") as file_:
+        with open(self.temp_filepath, "r", encoding="utf-8") as file_:
             self.tree = json.load(file_, object_hook=self._json_to_object)
-        Path(self.temp_filepath).unlink()
+        self.temp_filepath.unlink()
         if self.tree.source == "Chrome":
             self._add_index()
 
@@ -243,7 +250,7 @@ class JSONMixin:
         parsing/converting.
         Exporting the result to a new JSON file (output_filepath) with
         a prefix of 'output_'."""
-        with open(filepath, "r", encoding="Utf-8") as file_:
+        with open(filepath, "r", encoding="utf-8") as file_:
             tree = json.load(file_)
 
         if tree.get("checksum"):
@@ -256,6 +263,7 @@ class JSONMixin:
                 "date_added": 0,
                 "children": list(tree.get("roots").values()),
             }
+            tree["children"][1]["name"] = "Other Bookmarks"
         elif tree.get("root"):
             tree["title"] = "root"
             folders = {
@@ -267,7 +275,7 @@ class JSONMixin:
             for child in tree.get("children"):
                 child["title"] = folders[child.get("title")]
 
-        with open(output_filepath, "w", encoding="Utf-8") as file_:
+        with open(output_filepath, "w", encoding="utf-8") as file_:
             json.dump(tree, file_, ensure_ascii=False)
 
     def convert_to_json(self):
@@ -291,13 +299,14 @@ class JSONMixin:
 
     def save_to_json(self):
         """Function to export the bookmarks as JSON."""
-        output_file = Path(self.output_filepath).with_suffix(".json")
-        with open(output_file, "w", encoding="Utf-8") as file_:
+        output_file = self.output_filepath.with_suffix(".json")
+        with open(output_file, "w", encoding="utf-8") as file_:
             json.dump(self.bookmarks, file_, ensure_ascii=False)
 
 
 class BookmarksConverter(DBMixin, HTMLMixin, JSONMixin):
-    """Bookmarks Converter class that converts the bookmarks to DB/HTML/JSON, using Iteration and Stack.
+    """Bookmarks Converter class that converts the bookmarks to DB/HTML/JSON,
+    using Iteration and Stack.
 
     Usage:
     1- Instantiate a class and pass in the filepath:
@@ -325,7 +334,7 @@ class BookmarksConverter(DBMixin, HTMLMixin, JSONMixin):
         self.stack = None
         self.stack_item = None
         self.tree = None
-        self.filepath = filepath
+        self.filepath = Path(filepath)
         self._prepare_filepaths()
 
     def _prepare_filepaths(self):
@@ -334,9 +343,8 @@ class BookmarksConverter(DBMixin, HTMLMixin, JSONMixin):
          format_html_file() and format_json_file() methods.
         -output_filepath: output filepath used by the save_to_**(DB/HTML/JSON)
          methods to save the converted data into a file."""
-        filepath = Path(self.filepath)
-        self.output_filepath = str(filepath.with_name("output_" + filepath.name))
-        self.temp_filepath = str(filepath.with_name("temp_" + filepath.name))
+        self.output_filepath = self.filepath.with_name("output_" + self.filepath.name)
+        self.temp_filepath = self.filepath.with_name("temp_" + self.filepath.name)
 
     def _add_index(self):
         """Add index to each element if tree source is HTML or JSON(Chrome)"""

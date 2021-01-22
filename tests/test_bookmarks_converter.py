@@ -1,8 +1,9 @@
 from filecmp import cmp
 from pathlib import Path
 
-from src.bookmarks_converter import BookmarksConverter, DBMixin, HTMLMixin, JSONMixin
-from src.models import JSONBookmark
+from bookmarks_converter import BookmarksConverter
+from bookmarks_converter.core import JSONMixin
+from bookmarks_converter.models import JSONBookmark
 
 
 # JSONMixin tests
@@ -19,8 +20,8 @@ def test_format_json_file_chrome(source_bookmark_files, read_json):
 
     assert json_data.get("name") == "root"
     assert json_data.get("children")[0].get("name") == "Bookmarks bar"
-    assert json_data.get("children")[1].get("name") == "Other bookmarks"
-    Path(output_file).unlink()
+    assert json_data.get("children")[1].get("name") == "Other Bookmarks"
+    output_file.unlink()
 
 
 def test_format_json_file_firefox(source_bookmark_files, read_json):
@@ -33,14 +34,14 @@ def test_format_json_file_firefox(source_bookmark_files, read_json):
     assert root_children[1].get("title") == "Bookmarks Toolbar"
     assert root_children[2].get("title") == "Other Bookmarks"
     assert root_children[3].get("title") == "Mobile Bookmarks"
-    Path(output_file).unlink()
+    output_file.unlink()
 
 
 # BookmarksConverter tests
 def test_prepare_filepaths():
     filename = "/home/user/Downloads/source/bookmarks.html"
-    temp_filepath = "/home/user/Downloads/source/temp_bookmarks.html"
-    output_filepath = "/home/user/Downloads/source/output_bookmarks.html"
+    temp_filepath = Path("/home/user/Downloads/source/temp_bookmarks.html")
+    output_filepath = Path("/home/user/Downloads/source/output_bookmarks.html")
     bookmarks = BookmarksConverter(filename)
 
     assert temp_filepath == bookmarks.temp_filepath
@@ -50,7 +51,7 @@ def test_prepare_filepaths():
 def test_from_chrome_html_to_json(
     source_bookmark_files, result_bookmark_files, read_json
 ):
-    result_file = result_bookmark_files["from_chrome_html.json"]
+    result_file = Path(result_bookmark_files["from_chrome_html.json"])
     json_data = read_json(result_file)
     # date_added of "root" folder
     root_date = json_data["date_added"]
@@ -62,54 +63,60 @@ def test_from_chrome_html_to_json(
     bookmarks.bookmarks["date_added"] = root_date
     bookmarks.bookmarks["children"][1]["date_added"] = other_date
     bookmarks.save_to_json()
-    output_file = Path(bookmarks.output_filepath).with_suffix(".json")
-    assert cmp(result_file, output_file)
-    Path(output_file).unlink()
+    output_file = bookmarks.output_filepath.with_suffix(".json")
+    assert cmp(result_file, output_file, shallow=False)
+    output_file.unlink()
 
 
 def test_from_chrome_html_to_db(
     source_bookmark_files, result_bookmark_files, get_dates_from_db
 ):
-    result_file = result_bookmark_files["from_chrome_html.db"]
-    root_date, other_date = get_dates_from_db(result_file, "Chrome")
+    origin = "Chrome"
+    result_file = Path(result_bookmark_files["from_chrome_html.db"])
+    result_bookmarks, root_date, other_date = get_dates_from_db(result_file, origin)
     bookmarks = BookmarksConverter(source_bookmark_files["bookmarks_chrome.html"])
     bookmarks.parse_html()
     bookmarks.convert_to_db()
     bookmarks.bookmarks[0].date_added = root_date
     bookmarks.bookmarks[1].date_added = other_date
     bookmarks.save_to_db()
-    output_file = Path(bookmarks.output_filepath).with_suffix(".db")
-    assert cmp(result_file, output_file)
-    Path(output_file).unlink()
+    output_file = bookmarks.output_filepath.with_suffix(".db")
+    output_bookmarks, _, _ = get_dates_from_db(output_file, origin)
+    assert result_bookmarks == output_bookmarks
+    output_file.unlink()
 
 
 def test_from_chrome_json_to_html(source_bookmark_files, result_bookmark_files):
+    result_file = Path(result_bookmark_files["from_chrome_json.html"])
     bookmarks = BookmarksConverter(source_bookmark_files["bookmarks_chrome.json"])
     bookmarks.parse_json()
     bookmarks.convert_to_html()
     bookmarks.save_to_html()
-    output_file = Path(bookmarks.output_filepath).with_suffix(".html")
-    assert cmp(result_bookmark_files["from_chrome_json.html"], output_file)
-    Path(output_file).unlink()
+    output_file = bookmarks.output_filepath.with_suffix(".html")
+    assert cmp(result_file, output_file, shallow=False)
+    output_file.unlink()
 
 
 def test_from_chrome_json_to_db(
     source_bookmark_files, result_bookmark_files, get_dates_from_db
 ):
-    result_file = result_bookmark_files["from_chrome_json.db"]
+    origin = "Chrome"
+    result_file = Path(result_bookmark_files["from_chrome_json.db"])
+    result_bookmarks, _, _ = get_dates_from_db(result_file, origin)
     bookmarks = BookmarksConverter(source_bookmark_files["bookmarks_chrome.json"])
     bookmarks.parse_json()
     bookmarks.convert_to_db()
     bookmarks.save_to_db()
-    output_file = Path(bookmarks.output_filepath).with_suffix(".db")
-    assert cmp(result_file, output_file)
-    Path(output_file).unlink()
+    output_file = bookmarks.output_filepath.with_suffix(".db")
+    output_bookmarks, _, _ = get_dates_from_db(output_file, origin)
+    assert result_bookmarks == output_bookmarks
+    output_file.unlink()
 
 
 def test_from_firefox_html_to_json(
     source_bookmark_files, result_bookmark_files, read_json
 ):
-    result_file = result_bookmark_files["from_firefox_html.json"]
+    result_file = Path(result_bookmark_files["from_firefox_html.json"])
     json_data = read_json(result_file)
     # date_added of "root" folder
     root_date = json_data["date_added"]
@@ -121,45 +128,51 @@ def test_from_firefox_html_to_json(
     bookmarks.bookmarks["date_added"] = root_date
     bookmarks.bookmarks["children"][0]["date_added"] = menu_date
     bookmarks.save_to_json()
-    output_file = Path(bookmarks.output_filepath).with_suffix(".json")
-    assert cmp(result_file, output_file)
-    Path(output_file).unlink()
+    output_file = bookmarks.output_filepath.with_suffix(".json")
+    assert cmp(result_file, output_file, shallow=False)
+    output_file.unlink()
 
 
 def test_from_firefox_html_to_db(
     source_bookmark_files, result_bookmark_files, get_dates_from_db
 ):
-    result_file = result_bookmark_files["from_firefox_html.db"]
-    root_date, menu_date = get_dates_from_db(result_file, "Firefox")
+    origin = "Firefox"
+    result_file = Path(result_bookmark_files["from_firefox_html.db"])
+    result_bookmarks, root_date, menu_date = get_dates_from_db(result_file, origin)
     bookmarks = BookmarksConverter(source_bookmark_files["bookmarks_firefox.html"])
     bookmarks.parse_html()
     bookmarks.convert_to_db()
     bookmarks.bookmarks[0].date_added = root_date
     bookmarks.bookmarks[13].date_added = menu_date
     bookmarks.save_to_db()
-    output_file = Path(bookmarks.output_filepath).with_suffix(".db")
-    assert cmp(result_file, output_file)
-    Path(output_file).unlink()
+    output_file = bookmarks.output_filepath.with_suffix(".db")
+    output_bookmarks, _, _ = get_dates_from_db(output_file, origin)
+    assert result_bookmarks == output_bookmarks
+    output_file.unlink()
 
 
 def test_from_firefox_json_to_html(source_bookmark_files, result_bookmark_files):
+    result_file = Path(result_bookmark_files["from_firefox_json.html"])
     bookmarks = BookmarksConverter(source_bookmark_files["bookmarks_firefox.json"])
     bookmarks.parse_json()
     bookmarks.convert_to_html()
     bookmarks.save_to_html()
-    output_file = Path(bookmarks.output_filepath).with_suffix(".html")
-    assert cmp(result_bookmark_files["from_firefox_json.html"], output_file)
-    Path(output_file).unlink()
+    output_file = bookmarks.output_filepath.with_suffix(".html")
+    assert cmp(result_file, output_file, shallow=False)
+    output_file.unlink()
 
 
 def test_from_firefox_json_to_db(
     source_bookmark_files, result_bookmark_files, get_dates_from_db
 ):
-    result_file = result_bookmark_files["from_firefox_json.db"]
+    origin = "Firefox"
+    result_file = Path(result_bookmark_files["from_firefox_json.db"])
+    result_bookmarks, _, _ = get_dates_from_db(result_file, origin)
     bookmarks = BookmarksConverter(source_bookmark_files["bookmarks_firefox.json"])
     bookmarks.parse_json()
     bookmarks.convert_to_db()
     bookmarks.save_to_db()
-    output_file = Path(bookmarks.output_filepath).with_suffix(".db")
-    assert cmp(result_file, output_file)
-    Path(output_file).unlink()
+    output_file = bookmarks.output_filepath.with_suffix(".db")
+    output_bookmarks, _, _ = get_dates_from_db(output_file, origin)
+    assert result_bookmarks == output_bookmarks
+    output_file.unlink()

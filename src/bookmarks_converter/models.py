@@ -2,13 +2,7 @@ import itertools
 import time
 
 from bs4 import Tag
-from sqlalchemy import (
-    Column,
-    ForeignKey,
-    Integer,
-    String,
-    create_engine,
-)
+from sqlalchemy import Column, ForeignKey, Integer, String, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import backref, relationship, sessionmaker
 
@@ -18,7 +12,7 @@ session = Session()
 Base = declarative_base()
 
 
-class Node:
+class NodeMixin:
     """Mixin class containing the methods used to create folders/urls in
     different formats HTML/JSON/DB, used in the creation of new bookmark tree
     in a different format."""
@@ -91,26 +85,6 @@ class Node:
         }
         return url
 
-    def create_folder(self, output_format):
-        """Part of an attempt to create a unified Bookmarks_Converter
-        Iterator. Currently not used and can be removed"""
-        formats = {
-            "db": lambda: self.create_folder_as_db(),
-            "html": lambda: self.create_folder_as_html(),
-            "json": lambda: self.create_folder_as_json(),
-        }
-        return formats[output_format]()
-
-    def create_url(self, output_format):
-        """Part of an attempt to create a unified Bookmarks_Converter
-        Iterator. Currently not used and can be removed"""
-        formats = {
-            "db": lambda: self.create_url_as_db(),
-            "html": lambda: self.create_url_as_html(),
-            "json": lambda: self.create_url_as_json(),
-        }
-        return formats[output_format]()
-
     def check_type(self, type_):
         if self.type != type_:
             raise TypeError(f"The item you are converting is not a {type_}")
@@ -123,7 +97,7 @@ class Node:
         return f"{self.title} - {self.type} - id: {self.id}"
 
 
-class Bookmark(Base, Node):
+class Bookmark(Base, NodeMixin):
     """Base model for the Url and Folder model.
     (used for Single Table Inheritance)
     ...
@@ -173,6 +147,18 @@ class Bookmark(Base, Node):
         session.delete(self)
         session.commit()
 
+    def __eq__(self, other):
+        if not isinstance(other, type(self)):
+            return NotImplemented
+        for self_attr, other_attr in zip(vars(self), vars(other)):
+            # skip if the attribute is '_sa_instance_state' which is in
+            # .__dict__ and vars(), since the object is a sqlalchemy object.
+            if self_attr.startswith("_"):
+                continue
+            if self.__getattribute__(self_attr) != other.__getattribute__(other_attr):
+                return False
+        return True
+
 
 class Folder(Bookmark):
     """Model representing bookmark folders
@@ -189,7 +175,7 @@ class Folder(Bookmark):
         id of parent folder
     index : int
         current index in parent folder
-    urls : db relationship
+    children : db relationship
         urls contained in the folder"""
 
     __mapper_args__ = {"polymorphic_identity": "folder"}
@@ -261,7 +247,7 @@ class Url(Bookmark):
         self.tags = tags
 
 
-class JSONBookmark(Node):
+class JSONBookmark(NodeMixin):
     """JSON Bookmark class used to create objects out of the folders/urls in a
     json bookmarks file while importing (json.load) using the object_hook.
 
@@ -327,7 +313,7 @@ class JSONBookmark(Node):
             self.date_added = self.date_added - 11644473600000000
 
 
-class HTMLBookmark(Tag, Node):
+class HTMLBookmark(Tag, NodeMixin):
     """TreeBuilder class, used to add additional functionality to the
     BeautifulSoup Tag class. The following functionality is added:
 
