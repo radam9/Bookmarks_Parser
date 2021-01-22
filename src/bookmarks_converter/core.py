@@ -169,7 +169,16 @@ class HTMLMixin:
 
     def convert_to_html(self):
         """Convert the imported bookmarks to HTML."""
-        header = """<!DOCTYPE NETSCAPE-Bookmark-file-1>\n<!-- This is an automatically generated file.\n     It will be read and overwritten.\n     DO NOT EDIT! -->\n<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">\n<TITLE>Bookmarks</TITLE>\n<H1>Bookmarks Menu</H1>\n\n<DL><p>\n"""
+        header = """<!DOCTYPE NETSCAPE-Bookmark-file-1>
+<!-- This is an automatically generated file.
+     It will be read and overwritten.
+     DO NOT EDIT! -->
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">
+<TITLE>Bookmarks</TITLE>
+<H1>Bookmarks Menu</H1>
+
+<DL><p>
+"""
         footer = "</DL>"
 
         self.stack = self.tree.children[::-1]
@@ -296,7 +305,8 @@ class JSONMixin:
 
 
 class BookmarksConverter(DBMixin, HTMLMixin, JSONMixin):
-    """Bookmarks Converter class that converts the bookmarks to DB/HTML/JSON, using Iteration and Stack.
+    """Bookmarks Converter class that converts the bookmarks to DB/HTML/JSON,
+    using Iteration and Stack.
 
     Usage:
     1- Instantiate a class and pass in the filepath:
