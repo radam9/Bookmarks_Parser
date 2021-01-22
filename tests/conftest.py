@@ -50,6 +50,19 @@ def get_dates_from_db():
 
 
 @pytest.fixture
+def create_class_instance():
+    def _function(data, class_):
+        instance = class_()
+        for key, value in data.items():
+            if key == "iconuri":
+                key = "icon_uri"
+            setattr(instance, key, value)
+        return instance
+
+    return _function
+
+
+@pytest.fixture
 def read_json():
     def _function(filepath):
         with open(filepath, "r", encoding="Utf-8") as file_:
