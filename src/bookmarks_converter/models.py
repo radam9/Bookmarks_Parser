@@ -12,7 +12,7 @@ session = Session()
 Base = declarative_base()
 
 
-class Node:
+class NodeMixin:
     """Mixin class containing the methods used to create folders/urls in
     different formats HTML/JSON/DB, used in the creation of new bookmark tree
     in a different format."""
@@ -97,7 +97,7 @@ class Node:
         return f"{self.title} - {self.type} - id: {self.id}"
 
 
-class Bookmark(Base, Node):
+class Bookmark(Base, NodeMixin):
     """Base model for the Url and Folder model.
     (used for Single Table Inheritance)
     ...
@@ -247,7 +247,7 @@ class Url(Bookmark):
         self.tags = tags
 
 
-class JSONBookmark(Node):
+class JSONBookmark(NodeMixin):
     """JSON Bookmark class used to create objects out of the folders/urls in a
     json bookmarks file while importing (json.load) using the object_hook.
 
@@ -313,7 +313,7 @@ class JSONBookmark(Node):
             self.date_added = self.date_added - 11644473600000000
 
 
-class HTMLBookmark(Tag, Node):
+class HTMLBookmark(Tag, NodeMixin):
     """TreeBuilder class, used to add additional functionality to the
     BeautifulSoup Tag class. The following functionality is added:
 
