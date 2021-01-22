@@ -2,13 +2,7 @@ import itertools
 import time
 
 from bs4 import Tag
-from sqlalchemy import (
-    Column,
-    ForeignKey,
-    Integer,
-    String,
-    create_engine,
-)
+from sqlalchemy import Column, ForeignKey, Integer, String, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import backref, relationship, sessionmaker
 
