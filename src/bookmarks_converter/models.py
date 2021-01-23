@@ -150,14 +150,14 @@ class Bookmark(Base, NodeMixin):
     def __eq__(self, other):
         if not isinstance(other, type(self)):
             return NotImplemented
-        for self_attr, other_attr in zip(vars(self), vars(other)):
-            # skip if the attribute is '_sa_instance_state' which is in
-            # .__dict__ and vars(), since the object is a sqlalchemy object.
-            if self_attr.startswith("_"):
-                continue
-            if self.__getattribute__(self_attr) != other.__getattribute__(other_attr):
-                return False
-        return True
+        # skip if the attribute is '_sa_instance_state' which is in
+        # .__dict__ and vars(), since the object is a sqlalchemy object.
+        remove = "_sa_instance_state"
+        vars_self = vars(self).copy()
+        vars_other = vars(other).copy()
+        del vars_self[remove]
+        del vars_other[remove]
+        return vars_self == vars_other
 
 
 class Folder(Bookmark):
