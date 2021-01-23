@@ -25,11 +25,11 @@ def test_from_chrome_html_to_json(
 
 
 def test_from_chrome_html_to_db(
-    source_bookmark_files, result_bookmark_files, get_dates_from_db
+    source_bookmark_files, result_bookmark_files, get_data_from_db
 ):
     origin = "Chrome"
     result_file = Path(result_bookmark_files["from_chrome_html.db"])
-    result_bookmarks, root_date, other_date = get_dates_from_db(result_file, origin)
+    result_bookmarks, root_date, other_date = get_data_from_db(result_file, origin)
     bookmarks = BookmarksConverter(source_bookmark_files["bookmarks_chrome.html"])
     bookmarks.parse_html()
     bookmarks.convert_to_db()
@@ -37,7 +37,7 @@ def test_from_chrome_html_to_db(
     bookmarks.bookmarks[1].date_added = other_date
     bookmarks.save_to_db()
     output_file = bookmarks.output_filepath.with_suffix(".db")
-    output_bookmarks, _, _ = get_dates_from_db(output_file, origin)
+    output_bookmarks, _, _ = get_data_from_db(output_file, origin)
     assert result_bookmarks == output_bookmarks
     output_file.unlink()
 
@@ -54,17 +54,17 @@ def test_from_chrome_json_to_html(source_bookmark_files, result_bookmark_files):
 
 
 def test_from_chrome_json_to_db(
-    source_bookmark_files, result_bookmark_files, get_dates_from_db
+    source_bookmark_files, result_bookmark_files, get_data_from_db
 ):
     origin = "Chrome"
     result_file = Path(result_bookmark_files["from_chrome_json.db"])
-    result_bookmarks, _, _ = get_dates_from_db(result_file, origin)
+    result_bookmarks, _, _ = get_data_from_db(result_file, origin)
     bookmarks = BookmarksConverter(source_bookmark_files["bookmarks_chrome.json"])
     bookmarks.parse_json()
     bookmarks.convert_to_db()
     bookmarks.save_to_db()
     output_file = bookmarks.output_filepath.with_suffix(".db")
-    output_bookmarks, _, _ = get_dates_from_db(output_file, origin)
+    output_bookmarks, _, _ = get_data_from_db(output_file, origin)
     assert result_bookmarks == output_bookmarks
     output_file.unlink()
 
@@ -90,11 +90,11 @@ def test_from_firefox_html_to_json(
 
 
 def test_from_firefox_html_to_db(
-    source_bookmark_files, result_bookmark_files, get_dates_from_db
+    source_bookmark_files, result_bookmark_files, get_data_from_db
 ):
     origin = "Firefox"
     result_file = Path(result_bookmark_files["from_firefox_html.db"])
-    result_bookmarks, root_date, menu_date = get_dates_from_db(result_file, origin)
+    result_bookmarks, root_date, menu_date = get_data_from_db(result_file, origin)
     bookmarks = BookmarksConverter(source_bookmark_files["bookmarks_firefox.html"])
     bookmarks.parse_html()
     bookmarks.convert_to_db()
@@ -102,7 +102,7 @@ def test_from_firefox_html_to_db(
     bookmarks.bookmarks[13].date_added = menu_date
     bookmarks.save_to_db()
     output_file = bookmarks.output_filepath.with_suffix(".db")
-    output_bookmarks, _, _ = get_dates_from_db(output_file, origin)
+    output_bookmarks, _, _ = get_data_from_db(output_file, origin)
     assert result_bookmarks == output_bookmarks
     output_file.unlink()
 
@@ -119,16 +119,16 @@ def test_from_firefox_json_to_html(source_bookmark_files, result_bookmark_files)
 
 
 def test_from_firefox_json_to_db(
-    source_bookmark_files, result_bookmark_files, get_dates_from_db
+    source_bookmark_files, result_bookmark_files, get_data_from_db
 ):
     origin = "Firefox"
     result_file = Path(result_bookmark_files["from_firefox_json.db"])
-    result_bookmarks, _, _ = get_dates_from_db(result_file, origin)
+    result_bookmarks, _, _ = get_data_from_db(result_file, origin)
     bookmarks = BookmarksConverter(source_bookmark_files["bookmarks_firefox.json"])
     bookmarks.parse_json()
     bookmarks.convert_to_db()
     bookmarks.save_to_db()
     output_file = bookmarks.output_filepath.with_suffix(".db")
-    output_bookmarks, _, _ = get_dates_from_db(output_file, origin)
+    output_bookmarks, _, _ = get_data_from_db(output_file, origin)
     assert result_bookmarks == output_bookmarks
     output_file.unlink()

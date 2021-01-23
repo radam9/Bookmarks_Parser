@@ -78,11 +78,9 @@ def test_JSONBookmark_folder_custom(folder_custom):
 
 def test_JSONBookmark_create_url_as_json(url_custom):
     url = JSONBookmark(**url_custom)
-
     assert url.create_url_as_json() == url_custom
 
 
 def test_JSONBookmark_create_folder_as_json(folder_custom):
     folder = JSONBookmark(**folder_custom)
-
     assert folder.create_folder_as_json() == folder_custom

@@ -84,6 +84,13 @@ def test_create_folder_as_html(title, expected, folder_custom, create_class_inst
     assert expected == instance.create_folder_as_html()
 
 
+@pytest.mark.parametrize("type_", ["url", "folder"])
+def test_check_type(type_):
+    instance = NodeMixin()
+    instance.type = type_
+    assert instance.check_type(type_) is None
+
+
 @pytest.mark.parametrize(
     "method",
     [
@@ -95,7 +102,7 @@ def test_create_folder_as_html(title, expected, folder_custom, create_class_inst
         "create_url_as_json",
     ],
 )
-def test_check_type(method):
+def test_check_type_error(method):
     instance = NodeMixin()
     instance.type = "None"
     with pytest.raises(TypeError) as error:
@@ -107,3 +114,11 @@ def test_iter():
     instance.children = [i for i in range(10)]
     for a, b in zip(instance, instance.children):
         assert a == b
+
+
+def test_repr():
+    instance = NodeMixin()
+    instance.title = "Title"
+    instance.type = "folder"
+    instance.id = 0
+    assert repr(instance) == "Title - folder - id: 0"
