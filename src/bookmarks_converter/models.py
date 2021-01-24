@@ -132,10 +132,7 @@ class Bookmark(Base, NodeMixin):
         remote_side="Bookmark.id",
     )
 
-    __mapper_args__ = {
-        "polymorphic_on": type,
-        "polymorphic_identity": "bookmark",
-    }
+    __mapper_args__ = {"polymorphic_on": type, "polymorphic_identity": "bookmark"}
 
     def insert(self):
         session.add(self)
@@ -254,23 +251,23 @@ class JSONBookmark(NodeMixin):
 
     Attributes:
     ----------
-    :param id: id of the element
-    :type id: int
-    :param index: index (position) of the element in its parent
-    :type index: int
-    :param parent_id: id of the element's parent
-    :type parent_id: int
-    :param title: title (name) of the element
-    :type title: str
-    :param date_added: date (time since epoch) at which the element was
+    id: int
+        id of the element
+    index : int
+        index (position) of the element in its parent
+    parent_id : int
+        id of the element's parent
+    title : str
+        title (name) of the element
+    date_added : float
+        date (time since epoch) at which the element was
     created/added to the bookmarks
-    :type date_added: float
-    :param type: element type (folder or url)
-    :type type: str
-    :param children: children of the current element
-    :type children: list
-    :param source: source of bookmark element (chrome/firefox/bookmarkie)
-    :type source: str
+    type : str
+        element type (folder or url)
+    children : list of dict
+        children of the current element
+    source : str
+        source of bookmark element (chrome/firefox/bookmarkie)
 
     Parameters:
     -----------

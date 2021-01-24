@@ -109,10 +109,10 @@ class HTMLMixin:
         - All "<H3>" and "<A>" tag's inner text are added as a "title"
         attribute within the html element.
 
-        :param filepath: absolute path to bookmarks html file.
-        :type filepath: str
-        :param output_filepath: absolute path and name for output file.
-        :type output_filepath: str"""
+        filepath: str
+            absolute path to bookmarks html file.
+        output_filepath: str
+            absolute path and name for output file."""
         with open(filepath, "r", encoding="utf-8") as input_file, open(
             output_filepath, "w", encoding="utf-8"
         ) as output_file:
@@ -144,7 +144,11 @@ class HTMLMixin:
 
         If the tree title is 'Bookmarks' we need to extract the 'Bookmarks bar'
         folder and insert it at the beginning of the root children. Then we need
-        to rename the 'Bookmarks' folder to 'Other Bookmarks'."""
+        to rename the 'Bookmarks' folder to 'Other Bookmarks'.
+
+        tree: :class: `bs4.element.Tag`
+            BeautifulSoup object containing the first <H3> tag found in the
+            html file."""
         self.tree = HTMLBookmark(
             name="h3",
             attrs={
