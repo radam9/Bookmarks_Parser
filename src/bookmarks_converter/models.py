@@ -134,7 +134,11 @@ class Bookmark(Base, NodeMixin):
         remote_side="Bookmark.id",
     )
 
-    __mapper_args__ = {"polymorphic_on": type, "polymorphic_identity": "bookmark"}
+    __mapper_args__ = {
+        "polymorphic_on": type,
+        "polymorphic_identity": "bookmark",
+        "order_by": "index",
+    }
 
     def insert(self):
         session.add(self)
