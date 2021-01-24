@@ -106,9 +106,16 @@ class Test_JSONMixin:
         # TODO:
         pass
 
-    def test_save_to_json(self):
-        # TODO:
-        pass
+    def test_save_to_json(self, result_bookmark_files):
+        result_file = result_bookmark_files["from_firefox_html.json"]
+        instance = BookmarksConverter(result_file)
+        with open(result_file, "r", encoding="utf-8") as file_:
+            instance.bookmarks = json.load(file_)
+        output_file = Path(result_file).with_name("output_file.json")
+        instance.output_filepath = output_file
+        instance.save_to_json()
+        assert cmp(result_file, output_file, shallow=False)
+        output_file.unlink()
 
 
 class Test_BookmarksConverter:
