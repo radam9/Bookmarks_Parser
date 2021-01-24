@@ -1,7 +1,27 @@
+import pytest
 from filecmp import cmp
 from pathlib import Path
 
 from bookmarks_converter import BookmarksConverter
+
+
+@pytest.mark.parametrize(
+    "result_file, source_file",
+    [
+        ("from_chrome_json.html", "from_chrome_json.db"),
+        ("from_firefox_json.html", "from_firefox_json.db"),
+    ],
+)
+def test_from_db_to_html(result_file, source_file, result_bookmark_files):
+    result_file = Path(result_bookmark_files[result_file])
+    source_file = Path(result_bookmark_files[source_file])
+    bookmarks = BookmarksConverter(source_file)
+    bookmarks.parse_db()
+    bookmarks.convert_to_html()
+    bookmarks.save_to_html()
+    output_file = bookmarks.output_filepath.with_suffix(".html")
+    assert cmp(result_file, output_file, shallow=False)
+    output_file.unlink()
 
 
 def test_from_chrome_html_to_json(
