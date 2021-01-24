@@ -1,5 +1,5 @@
 import pytest
-from bookmarks_converter.models import NodeMixin, Folder, Url
+from bookmarks_converter.models import Folder, NodeMixin, Url
 
 
 def test_create_url_as_db(url_custom, create_class_instance):

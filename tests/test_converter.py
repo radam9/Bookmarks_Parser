@@ -1,7 +1,7 @@
-import pytest
 from filecmp import cmp
 from pathlib import Path
 
+import pytest
 from bookmarks_converter import BookmarksConverter
 
 

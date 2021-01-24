@@ -1,6 +1,6 @@
+import json
 from filecmp import cmp
 from pathlib import Path
-
 
 from bookmarks_converter import BookmarksConverter
 from bookmarks_converter.core import JSONMixin
