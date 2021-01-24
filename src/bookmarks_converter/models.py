@@ -127,7 +127,7 @@ class Bookmark(Base, NodeMixin):
     parent = relationship(
         "Bookmark",
         cascade="save-update, merge",
-        backref=backref("children", cascade="all"),
+        backref=backref("children", cascade="all", order_by="Bookmark.index"),
         lazy=False,
         remote_side="Bookmark.id",
     )
@@ -135,7 +135,6 @@ class Bookmark(Base, NodeMixin):
     __mapper_args__ = {
         "polymorphic_on": type,
         "polymorphic_identity": "bookmark",
-        "order_by": "index",
     }
 
     def insert(self):
