@@ -181,7 +181,6 @@ If you export your bookmarks as a .json file using this BookmarksConverter packa
   "type": "folder",
   "id": 1,
   "index": 0,
-  "parent_id": 0,
   "title": "Main Folder",
   "date_added": 0,
   "children": []
@@ -195,7 +194,6 @@ If you export your bookmarks as a .json file using this BookmarksConverter packa
   "type": "url",
   "id": 2,
   "index": 0,
-  "parent_id": 1,
   "url": "https://www.google.com",
   "title": "Google",
   "date_added": 0,
