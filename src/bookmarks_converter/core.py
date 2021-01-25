@@ -30,34 +30,34 @@ class DBMixin:
     """Mixing containing all the DB related functions."""
 
     def parse_db(self):
-        """Import the DB bookmarks file into self.tree as an object."""
+        """Import the DB bookmarks file into self._tree as an object."""
         database_path = "sqlite:///" + str(self.filepath)
         engine = create_engine(database_path, encoding="utf-8")
         Session = sessionmaker(bind=engine)
         session = Session()
-        self.tree = session.query(Bookmark).get(1)
+        self._tree = session.query(Bookmark).get(1)
 
     def convert_to_db(self):
         """Convert the imported bookmarks to database objects."""
         self.bookmarks = []
-        self.stack = [self.tree]
+        self._stack = [self._tree]
 
-        while self.stack:
-            self.stack_item = self.stack.pop()
+        while self._stack:
+            self._stack_item = self._stack.pop()
             self._iterate_folder_db()
 
     def _iterate_folder_db(self):
         """Iterate through each item in the hierarchy tree and create
         a database object, appending any folders that contain children to
         the stack for further processing."""
-        folder = self.stack_item.create_folder_as_db()
+        folder = self._stack_item.create_folder_as_db()
         self.bookmarks.append(folder)
         parent_id = folder.id
-        for child in self.stack_item:
+        for child in self._stack_item:
             child.parent_id = parent_id
             if child.type == "folder":
                 if child.children:
-                    self.stack.append(child)
+                    self._stack.append(child)
                 else:
                     folder = child.create_folder_as_db()
                     self.bookmarks.append(folder)
@@ -81,7 +81,7 @@ class HTMLMixin:
     """Mixing containing all the HTML related functions."""
 
     def parse_html(self):
-        """Imports the HTML Bookmarks file into self.tree as a modified soup
+        """Imports the HTML Bookmarks file into self._tree as a modified soup
         object using the TreeBuilder class HTMLBookmark, which adds property
         access to the html attributes of the soup object."""
         self.format_html_file(self.filepath, self.temp_filepath)
@@ -149,7 +149,7 @@ class HTMLMixin:
         tree: :class: `bs4.element.Tag`
             BeautifulSoup object containing the first <H3> tag found in the
             html file."""
-        self.tree = HTMLBookmark(
+        self._tree = HTMLBookmark(
             name="h3",
             attrs={
                 "id": 1,
@@ -159,16 +159,16 @@ class HTMLMixin:
                 "date_added": round(time.time() * 1000),
             },
         )
-        self.tree.children.append(tree)
+        self._tree.children.append(tree)
         if tree.title == "Bookmarks Menu":
             for i, child in enumerate(tree):
                 if child.title in ("Bookmarks Toolbar", "Other Bookmarks"):
-                    self.tree.children.append(tree.children.pop(i))
+                    self._tree.children.append(tree.children.pop(i))
         elif tree.title == "Bookmarks":
             tree.title = "Other Bookmarks"
             for i, child in enumerate(tree):
                 if child.title == "Bookmarks bar":
-                    self.tree.children.insert(0, tree.children.pop(i))
+                    self._tree.children.insert(0, tree.children.pop(i))
                     break
 
     def convert_to_html(self):
@@ -185,11 +185,11 @@ class HTMLMixin:
 """
         footer = "</DL>"
 
-        self.stack = self.tree.children[::-1]
+        self._stack = self._tree.children[::-1]
         body = []
 
-        while self.stack:
-            self.stack_item = self.stack.pop()
+        while self._stack:
+            self._stack_item = self._stack.pop()
             folder = self._iterate_folder_html()
             if folder:
                 self._create_placeholder(body, folder)
@@ -201,12 +201,12 @@ class HTMLMixin:
         HTML. If a folder has children, it is added to the stack and a
         placeholder is left in its place so it can be inserted back to its
         position after processing."""
-        folder = [self.stack_item.create_folder_as_html(), "<DL><p>\n"]
+        folder = [self._stack_item.create_folder_as_html(), "<DL><p>\n"]
         list_end = "</DL><p>\n"
-        for child in self.stack_item:
+        for child in self._stack_item:
             if child.type == "folder":
                 item = f"<folder{child.id}>"
-                self.stack.append(child)
+                self._stack.append(child)
             else:
                 item = child.create_url_as_html()
             folder.append(item)
@@ -215,7 +215,7 @@ class HTMLMixin:
         return result
 
     def _create_placeholder(self, body, folder):
-        placeholder = f"<folder{self.stack_item.id}>"
+        placeholder = f"<folder{self._stack_item.id}>"
         if body and (placeholder in body[-1]):
             body[-1] = body[-1].replace(placeholder, folder)
         else:
@@ -232,14 +232,14 @@ class JSONMixin:
     """Mixing containing all the JSON related functions."""
 
     def parse_json(self):
-        """Imports the JSON Bookmarks file into self.tree as a
+        """Imports the JSON Bookmarks file into self._tree as a
         JSONBookmark object."""
         self.format_json_file(self.filepath, self.temp_filepath)
         # with object_hook the json tree is loaded as JSONBookmark object tree.
         with open(self.temp_filepath, "r", encoding="utf-8") as file_:
-            self.tree = json.load(file_, object_hook=self._json_to_object)
+            self._tree = json.load(file_, object_hook=self._json_to_object)
         self.temp_filepath.unlink()
-        if self.tree.source == "Chrome":
+        if self._tree.source == "Chrome":
             self._add_index()
 
     @staticmethod
@@ -284,19 +284,19 @@ class JSONMixin:
 
     def convert_to_json(self):
         """Convert the imported bookmarks to JSON."""
-        self.stack = []
-        self.bookmarks = self.tree.create_folder_as_json()
-        self.stack.append((self.bookmarks, self.tree))
+        self._stack = []
+        self.bookmarks = self._tree.create_folder_as_json()
+        self._stack.append((self.bookmarks, self._tree))
 
-        while self.stack:
-            self.stack_item = self.stack.pop()
-            folder, node = self.stack_item
+        while self._stack:
+            self._stack_item = self._stack.pop()
+            folder, node = self._stack_item
             children = folder.get("children")
             for child in node:
                 if child.type == "folder":
                     item = child.create_folder_as_json()
                     if child.children:
-                        self.stack.append((item, child))
+                        self._stack.append((item, child))
                 else:
                     item = child.create_url_as_json()
                 children.append(item)
@@ -335,9 +335,9 @@ class BookmarksConverter(DBMixin, HTMLMixin, JSONMixin):
 
     def __init__(self, filepath):
         self.bookmarks = None
-        self.stack = None
-        self.stack_item = None
-        self.tree = None
+        self._stack = None
+        self._stack_item = None
+        self._tree = None
         self.filepath = Path(filepath)
         self._prepare_filepaths()
 
@@ -352,7 +352,7 @@ class BookmarksConverter(DBMixin, HTMLMixin, JSONMixin):
 
     def _add_index(self):
         """Add index to each element if tree source is HTML or JSON(Chrome)"""
-        stack = [self.tree]
+        stack = [self._tree]
         while stack:
             stack_item = stack.pop()
             for i, child in enumerate(stack_item, 0):

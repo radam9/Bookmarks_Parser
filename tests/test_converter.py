@@ -31,8 +31,8 @@ def test_from_db_to_json_chrome(result_bookmark_files):
     bookmarks.parse_db()
     # change the root and other folder dates, as they are generated when they
     # are created and don't exist in an html file.
-    bookmarks.tree.date_added = 1601886282042
-    bookmarks.tree.children[1].date_added = 1601886282042
+    bookmarks._tree.date_added = 1601886282042
+    bookmarks._tree.children[1].date_added = 1601886282042
     bookmarks.convert_to_json()
     bookmarks.save_to_json()
     output_file = bookmarks.output_filepath.with_suffix(".json")
@@ -47,8 +47,8 @@ def test_from_db_to_json_firefox(result_bookmark_files):
     bookmarks.parse_db()
     # change the root, menu and toolber folder dates, as they are generated
     # when they are created and don't exist in an html file.
-    bookmarks.tree.date_added = 1601886171439
-    bookmarks.tree.children[0].date_added = 1601886171439
+    bookmarks._tree.date_added = 1601886171439
+    bookmarks._tree.children[0].date_added = 1601886171439
     bookmarks.convert_to_json()
     bookmarks.save_to_json()
     output_file = bookmarks.output_filepath.with_suffix(".json")

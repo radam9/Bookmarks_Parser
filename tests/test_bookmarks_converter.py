@@ -13,7 +13,7 @@ class Test_DBMixin:
         instance = BookmarksConverter(file_path)
         instance.parse_db()
         bookmarks, _, _ = get_data_from_db(file_path, "Chrome")
-        assert bookmarks[0] == instance.tree
+        assert bookmarks[0] == instance._tree
 
     def test_iterate_folder_db(self):
         # TODO:
@@ -125,9 +125,9 @@ class Test_BookmarksConverter:
         temp_file = file_path.with_name(f"temp_{file_path.name}")
         instance = BookmarksConverter(str(file_path))
         assert instance.bookmarks is None
-        assert instance.stack is None
-        assert instance.stack_item is None
-        assert instance.tree is None
+        assert instance._stack is None
+        assert instance._stack_item is None
+        assert instance._tree is None
         assert instance.filepath == file_path
         assert isinstance(instance.filepath, Path)
         assert instance.output_filepath == output_file
