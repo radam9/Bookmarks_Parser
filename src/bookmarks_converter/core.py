@@ -29,7 +29,7 @@ from .models import Base, Bookmark, HTMLBookmark, JSONBookmark
 class DBMixin:
     """Mixing containing all the DB related functions."""
 
-    def parse_db(self):
+    def _parse_db(self):
         """Import the DB bookmarks file into self._tree as an object."""
         database_path = "sqlite:///" + str(self.filepath)
         engine = create_engine(database_path, encoding="utf-8")
@@ -37,7 +37,7 @@ class DBMixin:
         session = Session()
         self._tree = session.query(Bookmark).get(1)
 
-    def convert_to_db(self):
+    def _convert_to_db(self):
         """Convert the imported bookmarks to database objects."""
         self.bookmarks = []
         self._stack = [self._tree]
@@ -65,7 +65,7 @@ class DBMixin:
                 url = child.create_url_as_db()
                 self.bookmarks.append(url)
 
-    def save_to_db(self):
+    def _save_to_db(self):
         """Function to export the bookmarks as SQLite3 DB."""
         database_path = "sqlite:///" + str(self.output_filepath.with_suffix(".db"))
         engine = create_engine(database_path, encoding="utf-8")
@@ -80,7 +80,7 @@ class DBMixin:
 class HTMLMixin:
     """Mixing containing all the HTML related functions."""
 
-    def parse_html(self):
+    def _parse_html(self):
         """Imports the HTML Bookmarks file into self._tree as a modified soup
         object using the TreeBuilder class HTMLBookmark, which adds property
         access to the html attributes of the soup object."""
@@ -171,7 +171,7 @@ class HTMLMixin:
                     self._tree.children.insert(0, tree.children.pop(i))
                     break
 
-    def convert_to_html(self):
+    def _convert_to_html(self):
         """Convert the imported bookmarks to HTML."""
         header = """<!DOCTYPE NETSCAPE-Bookmark-file-1>
 <!-- This is an automatically generated file.
@@ -221,7 +221,7 @@ class HTMLMixin:
         else:
             body.append(folder)
 
-    def save_to_html(self):
+    def _save_to_html(self):
         """Export the bookmarks as HTML."""
         output_file = self.output_filepath.with_suffix(".html")
         with open(output_file, "w", encoding="utf-8") as file_:
@@ -231,7 +231,7 @@ class HTMLMixin:
 class JSONMixin:
     """Mixing containing all the JSON related functions."""
 
-    def parse_json(self):
+    def _parse_json(self):
         """Imports the JSON Bookmarks file into self._tree as a
         JSONBookmark object."""
         self.format_json_file(self.filepath, self.temp_filepath)
@@ -282,7 +282,7 @@ class JSONMixin:
         with open(output_filepath, "w", encoding="utf-8") as file_:
             json.dump(tree, file_, ensure_ascii=False)
 
-    def convert_to_json(self):
+    def _convert_to_json(self):
         """Convert the imported bookmarks to JSON."""
         self._stack = []
         self.bookmarks = self._tree.create_folder_as_json()
@@ -301,7 +301,7 @@ class JSONMixin:
                     item = child.create_url_as_json()
                 children.append(item)
 
-    def save_to_json(self):
+    def _save_to_json(self):
         """Function to export the bookmarks as JSON."""
         output_file = self.output_filepath.with_suffix(".json")
         with open(output_file, "w", encoding="utf-8") as file_:
@@ -313,31 +313,47 @@ class BookmarksConverter(DBMixin, HTMLMixin, JSONMixin):
     using Iteration and Stack.
 
     Usage:
-    1- Instantiate a class and pass in the filepath:
-        - `bookmarks = BookmarksConverter(filepath)`.
-    2- Import and Parse the bookmarks file using the method corresponding to
-        the source format:
-        - `bookmarks.parse_db()`, for a database file.
-        - `bookmarks.parse_html()`, for a html file.
-        - `bookmarks.parse_json()`, for a json file.
-    3- Convert the data using any of the convert methods:
-        - `bookmarks.convert_to_db()`, convert to database.
-        - `bookmarks.convert_to_html()`, convert to html.
-        - `bookmarks.convert_to_json()`, convert to json.
+    1- Instantiate a class and pass in the filepath as string or `Path` object:
+        - `instance = BookmarksConverter(filepath)`.
+    2- Import and Parse the bookmarks file passing the source format as a string in lower case:
+        - `instance.parse("db")`, for a database file.
+        - `instance.parse("html")`, for a html file.
+        - `instance.parse("json")`, for a json file.
+    3- Convert the data to the desired format passing the format as a lower
+    case string:
+        - `instance.convert("db")`, convert to database.
+        - `instance.convert("html")`, convert to html.
+        - `instance.convert("json")`, convert to json.
     4- At this point the bookmarks are stored in the `bookmarks` attribute
-        accessible through `bookmarks.bookmarks`.
-    5- Export the bookmarks to a file using the export method corresponding
-        to the conversion method used.
-        - `bookmarks.save_to_db(), if the data was converted to database format.
-        - `bookmarks.save_to_html(), if the data was converted to html format.
-        - `bookmarks.save_to_json(), if the data was converted to json format.
-    """
+        accessible through `instance.bookmarks`.
+    5- Export the bookmarks to a file using the save method `instance.save()`.
+
+    Parameters:
+    -----------
+    filepath : str or Path
+        path to the file to be converted using BookmarksConverter
+
+    Attributes:
+    -----------
+    bookmarks : list or dict or str
+        list, dict or str containing the bookmarks converted using BookmarksConverter.
+        - list of database objects if converted to database
+        - dict tree with bookmarks if converted to json
+        - str of the tree if converted to html
+    filepath : str or Path
+        path to the file to be converted using BookmarksConverter
+    output_filepath : Path
+        path to the output file exported using `.save()` method"""
+
+    _formats = ("db", "html", "json")
 
     def __init__(self, filepath):
-        self.bookmarks = None
+        self._export = None
+        self._format = None
         self._stack = None
         self._stack_item = None
         self._tree = None
+        self.bookmarks = None
         self.filepath = Path(filepath)
         self._prepare_filepaths()
 
@@ -359,3 +375,26 @@ class BookmarksConverter(DBMixin, HTMLMixin, JSONMixin):
                 child.index = i
                 if child.type == "folder":
                     stack.append(child)
+
+    def _dispatcher(self, method):
+        if self._format.lower() not in self._formats:
+            raise TypeError(
+                "The format you specified does not exist, make sure its 'db', 'html' or 'json'."
+            )
+        getattr(self, method)()
+
+    def parse(self, format_):
+        self._format = format_
+        self._dispatcher(f"_parse_{format_}")
+
+    def convert(self, format_):
+        self._format = format_
+        self._export = format_
+        self._dispatcher(f"_convert_to_{format_}")
+
+    def save(self):
+        if self._export is None:
+            raise RuntimeError(
+                "The bookmarks attribute is empty, you have to 'convert' the bookmarks before exporting them using 'save'."
+            )
+        self._dispatcher(f"_save_to_{self._export}")

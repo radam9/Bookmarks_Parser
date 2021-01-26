@@ -2,16 +2,18 @@ import json
 from filecmp import cmp
 from pathlib import Path
 
+import pytest
 from bookmarks_converter import BookmarksConverter
 from bookmarks_converter.core import JSONMixin
 from bookmarks_converter.models import Folder, JSONBookmark
+from pytest_mock import class_mocker as mocker
 
 
 class Test_DBMixin:
     def test_parse_db(self, result_bookmark_files, get_data_from_db):
         file_path = result_bookmark_files["from_chrome_html.db"]
         instance = BookmarksConverter(file_path)
-        instance.parse_db()
+        instance.parse("db")
         bookmarks, _, _ = get_data_from_db(file_path, "Chrome")
         assert bookmarks[0] == instance._tree
 
@@ -33,7 +35,10 @@ class Test_DBMixin:
             )
         instance = BookmarksConverter(file_path)
         instance.bookmarks = bookmarks
-        instance.save_to_db()
+        # setting the _export attribute as not to raise an error
+        # setting the _format attribute for the desired output format
+        instance._export = instance._format = "db"
+        instance.save()
         output_file = instance.output_filepath
         temp_bookmarks, _, _ = get_data_from_db(output_file, None)
         assert bookmarks == temp_bookmarks
@@ -113,7 +118,10 @@ class Test_JSONMixin:
             instance.bookmarks = json.load(file_)
         output_file = Path(result_file).with_name("output_file.json")
         instance.output_filepath = output_file
-        instance.save_to_json()
+        # setting the _export and _format attributes manually.
+        instance._export = "json"
+        instance._format = "json"
+        instance.save()
         assert cmp(result_file, output_file, shallow=False)
         output_file.unlink()
 
@@ -145,3 +153,66 @@ class Test_BookmarksConverter:
     def test_add_index(self):
         # TODO:
         pass
+
+    @pytest.mark.parametrize(
+        "_format, method",
+        [
+            ("db", "_parse_db"),
+            ("json", "_parse_json"),
+            ("html", "_parse_html"),
+            ("DB", "_convert_to_db"),
+            ("JSon", "_convert_to_json"),
+            ("HTML", "_convert_to_html"),
+            ("db", "_save_to_db"),
+            ("json", "_save_to_json"),
+            ("html", "_save_to_html"),
+        ],
+    )
+    def test_dispatcher(self, _format, method, mocker):
+        lower_format = _format.lower()
+        mocker.patch.object(BookmarksConverter, method)
+        instance = BookmarksConverter("filepath")
+        instance._export = lower_format
+        instance._format = lower_format
+        instance._dispatcher(method)
+        getattr(BookmarksConverter, method).assert_called_once()
+
+    def test_dispatcher_error(self):
+        instance = BookmarksConverter("filepath")
+        instance._format = "wrong format"
+        with pytest.raises(TypeError) as e:
+            instance._dispatcher("method")
+
+    @pytest.mark.parametrize("_format", ["db", "json", "html"])
+    def test_parse(self, _format, mocker):
+        mocker.patch.object(BookmarksConverter, "_dispatcher")
+        method = f"_parse_{_format}"
+        instance = BookmarksConverter("filepath")
+        instance.parse(_format)
+        assert instance._format == _format
+        BookmarksConverter._dispatcher.assert_called_once_with(method)
+
+    @pytest.mark.parametrize("_format", ["db", "json", "html"])
+    def test_convert(self, _format, mocker):
+        mocker.patch.object(BookmarksConverter, "_dispatcher")
+        method = f"_convert_to_{_format}"
+        instance = BookmarksConverter("filepath")
+        instance.convert(_format)
+        assert instance._export == _format
+        assert instance._format == _format
+        BookmarksConverter._dispatcher.assert_called_once_with(method)
+
+    @pytest.mark.parametrize("_format", ["db", "json", "html"])
+    def test_save(self, _format, mocker):
+        mocker.patch.object(BookmarksConverter, "_dispatcher")
+        method = f"_save_to_{_format}"
+        instance = BookmarksConverter("filepath")
+        instance._export = _format
+        instance._format = _format
+        instance.save()
+        BookmarksConverter._dispatcher.assert_called_once_with(method)
+
+    def test_save_error(self):
+        instance = BookmarksConverter("filepath")
+        with pytest.raises(RuntimeError) as e:
+            instance.save()
