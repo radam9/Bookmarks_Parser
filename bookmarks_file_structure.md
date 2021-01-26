@@ -36,6 +36,19 @@ The special folders `Bookmarks Toolbar` and `Other Bookmarks` in the main list, 
     </DL><p>
 </DL><p>
 ```
+#### Firefox HTML Folder template
+```html
+<DT><H3 ADD_DATE="1599750431" LAST_MODIFIED="1599750431">Mozilla Firefox</H3>
+```
+the folder can also contain an addition attribute that states the *special* role of the folder:
+- `PERSONAL_TOOLBAR_FOLDER="true"`: for the `Toolbar` folder.
+- `UNFILED_BOOKMARKS_FOLDER="true"`: for the `Other Bookmarks` folder.
+
+#### Firefox HTML URL template
+```html
+<DT><A HREF="https://www.mozilla.org/en-US/contribute/" ADD_DATE="1599750431" LAST_MODIFIED="1599750431" ICON_URI="fake-favicon-uri:https://www.mozilla.org/en-US/contribute/" ICON="data:image/png;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxNicgaGVpZ2h0PScxNic+IDxwYXRoIGQ9J00wIDBoMTZ2MTZIMHonLz4gPHBhdGggZD0nTTEzLjk5NCAxMC4zNTZIMTVWMTJoLTMuMTcxVjcuNzQxYzAtMS4zMDgtLjQzNS0xLjgxLTEuMjktMS44MS0xLjA0IDAtMS40Ni43MzctMS40NiAxLjh2Mi42M2gxLjAwNlYxMkg2LjkxOFY3Ljc0MWMwLTEuMzA4LS40MzUtMS44MS0xLjI5MS0xLjgxLTEuMDM5IDAtMS40NTkuNzM3LTEuNDU5IDEuOHYyLjYzaDEuNDQxVjEySDF2LTEuNjQ0aDEuMDA2VjYuMDc5SDFWNC40MzVoMy4xNjh2MS4xMzlhMi41MDcgMi41MDcgMCAwIDEgMi4zLTEuMjlBMi40NTIgMi40NTIgMCAwIDEgOC45MzEgNS45MSAyLjUzNSAyLjUzNSAwIDAgMSAxMS40IDQuMjg0IDIuNDQ4IDIuNDQ4IDAgMCAxIDE0IDYuOXYzLjQ1OHonIGZpbGw9JyNmZmYnLz4gPC9zdmc+">Get Involved</A>
+```
+The two attributes `ICON_URI` and `ICON` are optional and sometimes not included.
 
 ---
 
@@ -43,7 +56,7 @@ The special folders `Bookmarks Toolbar` and `Other Bookmarks` in the main list, 
 
 Just like in Firefox, all the Chrome bookmarks in an HTML file are contained inside the main `<DL><p>` list.
 
-The main list usually starts with the `Bookmarks bar` folder, all the bookmarks that follow the `Bookmarks bar` "H3" and are located inside the main list are either inside the `Other Bookmarks` or `Mobile Bookmarks` folder. Unlike the Firefox HTML file, the `Mobile Bookmarks` folder is included inside the HTML export, but they are included right after the `Other Bookmarks` `<H3>` and `<A>` items without any kind of separator, so it is not possible to differentiate between them from within the HTML file.
+The main list usually starts with the `Bookmarks bar` folder, all the bookmarks that follow the `Bookmarks bar`'s `<H3>` and are located inside the main list are either inside the `Other Bookmarks` or `Mobile Bookmarks` folder. Unlike the Firefox HTML file, the `Mobile Bookmarks` folder is included inside the HTML export, but they are included right after the `Other Bookmarks` `<H3>` and `<A>` items without any kind of separator, so it is not possible to differentiate between them (the `Other bookmarks` and `Mobile Bookmarks`) from within the HTML file.
 
 #### Chrome HTML Bookmark file Template
 
@@ -78,6 +91,18 @@ The main list usually starts with the `Bookmarks bar` folder, all the bookmarks 
     <DT><A></A>
 </DL><p>
 ```
+#### Chrome HTML Folder template
+```html
+<DT><H3 ADD_DATE="1599759836" LAST_MODIFIED="0">Social</H3>
+```
+the folder can also contain an addition attribute that states the *special* role of the folder:
+- `PERSONAL_TOOLBAR_FOLDER="true"`: for the `Bookmarks bar` folder.
+
+#### Chrome HTML URL template
+```html
+<DT><A HREF="https://www.mozilla.org/en-US/contribute/" ADD_DATE="1599750431" ICON="data:image/png;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxNicgaGVpZ2h0PScxNic+IDxwYXRoIGQ9J00wIDBoMTZ2MTZIMHonLz4gPHBhdGggZD0nTTEzLjk5NCAxMC4zNTZIMTVWMTJoLTMuMTcxVjcuNzQxYzAtMS4zMDgtLjQzNS0xLjgxLTEuMjktMS44MS0xLjA0IDAtMS40Ni43MzctMS40NiAxLjh2Mi42M2gxLjAwNlYxMkg2LjkxOFY3Ljc0MWMwLTEuMzA4LS40MzUtMS44MS0xLjI5MS0xLjgxLTEuMDM5IDAtMS40NTkuNzM3LTEuNDU5IDEuOHYyLjYzaDEuNDQxVjEySDF2LTEuNjQ0aDEuMDA2VjYuMDc5SDFWNC40MzVoMy4xNjh2MS4xMzlhMi41MDcgMi41MDcgMCAwIDEgMi4zLTEuMjlBMi40NTIgMi40NTIgMCAwIDEgOC45MzEgNS45MSAyLjUzNSAyLjUzNSAwIDAgMSAxMS40IDQuMjg0IDIuNDQ4IDIuNDQ4IDAgMCAxIDE0IDYuOXYzLjQ1OHonIGZpbGw9JyNmZmYnLz4gPC9zdmc+">Get Involved</A>
+```
+The `ICON` attribute is optional and sometimes not included.
 
 ---
 
@@ -86,10 +111,10 @@ The main list usually starts with the `Bookmarks bar` folder, all the bookmarks 
 Firefox allows users to export the bookmarks as a JSON file.
 The `.json` file has a root folder, which has the following folders as children:
 
-- `menu` --> which is the "Bookmarks Menu" folder.
-- `toolbar` --> which is the "Bookmarks Toolbar" folder.
-- `unfiled` --> which is the "Other Bookmarks" folder.
-- `mobile` --> which is the "Mobile Bookmarks" folder.
+- `menu` : which is the "Bookmarks Menu" folder.
+- `toolbar` : which is the "Bookmarks Toolbar" folder.
+- `unfiled` : which is the "Other Bookmarks" folder.
+- `mobile` : which is the "Mobile Bookmarks" folder.
 
 1. #### Json folder Template
 
@@ -137,7 +162,7 @@ Chrome doesn't allow you to export or backup your bookmarks as a .json file, but
 - `Windows [Chrome]` --> `%LOCALAPPDATA%\Google\Chrome\User Data`
 - `Windows [Chromium]` --> `%LOCALAPPDATA%\Chromium\User Data`
 
-Chrome's timestamps start from a different epoch than the Unix epoch (chrome counts in microseconds from `1601-01-01T00:00:00Z`). You can convert the chrome epoch to Unix epoch by the following equation:
+**NOTE:** Chrome's timestamps start from a different epoch than the Unix epoch (chrome counts in microseconds from `1601-01-01T00:00:00Z`). You can convert the chrome epoch to Unix epoch by the following equation:
 
 ```
 Unix Epoch = Chrome Epoch - 11644473600000000
@@ -172,7 +197,7 @@ Unix Epoch = Chrome Epoch - 11644473600000000
 
 ## 5) Custom Json exported by this BookmarksConverter
 
-If you export your bookmarks as a .json file using this BookmarksConverter package, you will get the json format will look as follows:
+If you export your bookmarks as a .json file using this BookmarksConverter package, you will get a json format that will look as follows:
 
 1. #### Json folder Template
 
