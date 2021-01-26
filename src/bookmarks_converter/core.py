@@ -50,7 +50,7 @@ class DBMixin:
         """Iterate through each item in the hierarchy tree and create
         a database object, appending any folders that contain children to
         the stack for further processing."""
-        folder = self._stack_item.create_folder_as_db()
+        folder = self._stack_item._convert_folder_to_db()
         self.bookmarks.append(folder)
         parent_id = folder.id
         for child in self._stack_item:
@@ -59,10 +59,10 @@ class DBMixin:
                 if child.children:
                     self._stack.append(child)
                 else:
-                    folder = child.create_folder_as_db()
+                    folder = child._convert_folder_to_db()
                     self.bookmarks.append(folder)
             else:
-                url = child.create_url_as_db()
+                url = child._convert_url_to_db()
                 self.bookmarks.append(url)
 
     def _save_to_db(self):
@@ -201,14 +201,14 @@ class HTMLMixin:
         HTML. If a folder has children, it is added to the stack and a
         placeholder is left in its place so it can be inserted back to its
         position after processing."""
-        folder = [self._stack_item.create_folder_as_html(), "<DL><p>\n"]
+        folder = [self._stack_item._convert_folder_to_html(), "<DL><p>\n"]
         list_end = "</DL><p>\n"
         for child in self._stack_item:
             if child.type == "folder":
                 item = f"<folder{child.id}>"
                 self._stack.append(child)
             else:
-                item = child.create_url_as_html()
+                item = child._convert_url_to_html()
             folder.append(item)
         folder.append(list_end)
         result = "".join(folder)
@@ -285,7 +285,7 @@ class JSONMixin:
     def _convert_to_json(self):
         """Convert the imported bookmarks to JSON."""
         self._stack = []
-        self.bookmarks = self._tree.create_folder_as_json()
+        self.bookmarks = self._tree._convert_folder_to_json()
         self._stack.append((self.bookmarks, self._tree))
 
         while self._stack:
@@ -294,11 +294,11 @@ class JSONMixin:
             children = folder.get("children")
             for child in node:
                 if child.type == "folder":
-                    item = child.create_folder_as_json()
+                    item = child._convert_folder_to_json()
                     if child.children:
                         self._stack.append((item, child))
                 else:
-                    item = child.create_url_as_json()
+                    item = child._convert_url_to_json()
                 children.append(item)
 
     def _save_to_json(self):
