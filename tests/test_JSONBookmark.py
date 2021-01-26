@@ -3,7 +3,6 @@ from bookmarks_converter.models import JSONBookmark
 
 def test_JSONBookmark_url_chrome(url_chrome):
     url = JSONBookmark(**url_chrome)
-
     assert isinstance(url.date_added, int)
     # we automatically add 1 to id when importing from chrome.
     assert int(url_chrome.get("id")) == url.id - 1
@@ -14,7 +13,6 @@ def test_JSONBookmark_url_chrome(url_chrome):
 
 def test_JSONBookmark_folder_chrome(folder_chrome):
     folder = JSONBookmark(**folder_chrome)
-
     assert isinstance(folder.children, list)
     assert isinstance(folder.date_added, int)
     # we automatically add 1 to id when importing from chrome.
@@ -25,7 +23,6 @@ def test_JSONBookmark_folder_chrome(folder_chrome):
 
 def test_JSONBookmark_url_firefox(url_firefox):
     url = JSONBookmark(**url_firefox)
-
     assert url_firefox.get("title") == url.title
     assert url_firefox.get("index") == url.index
     assert url_firefox.get("dateAdded") == url.date_added
@@ -39,7 +36,6 @@ def test_JSONBookmark_url_firefox(url_firefox):
 
 def test_JSONBookmark_folder_firefox(folder_firefox):
     folder = JSONBookmark(**folder_firefox)
-
     assert folder_firefox.get("title") == folder.title
     assert folder_firefox.get("index") == folder.index
     assert folder_firefox.get("dateAdded") == folder.date_added
@@ -52,7 +48,6 @@ def test_JSONBookmark_folder_firefox(folder_firefox):
 
 def test_JSONBookmark_url_custom(url_custom):
     url = JSONBookmark(**url_custom)
-
     assert url_custom.get("type") == url.type
     assert url_custom.get("id") == url.id
     assert url_custom.get("index") == url.index
@@ -66,7 +61,6 @@ def test_JSONBookmark_url_custom(url_custom):
 
 def test_JSONBookmark_folder_custom(folder_custom):
     folder = JSONBookmark(**folder_custom)
-
     assert folder_custom.get("type") == folder.type
     assert folder_custom.get("id") == folder.id
     assert folder_custom.get("index") == folder.index
@@ -76,13 +70,11 @@ def test_JSONBookmark_folder_custom(folder_custom):
     assert isinstance(folder_custom.get("children"), list)
 
 
-def test_JSONBookmark_create_url_as_json(url_custom):
+def test_JSONBookmark_convert_url_to_json(url_custom):
     url = JSONBookmark(**url_custom)
+    assert url._convert_url_to_json() == url_custom
 
-    assert url.create_url_as_json() == url_custom
 
-
-def test_JSONBookmark_create_folder_as_json(folder_custom):
+def test_JSONBookmark_convert_folder_to_json(folder_custom):
     folder = JSONBookmark(**folder_custom)
-
-    assert folder.create_folder_as_json() == folder_custom
+    assert folder._convert_folder_to_json() == folder_custom

@@ -1,8 +1,8 @@
 import pytest
-from bookmarks_converter.models import NodeMixin, Folder, Url
+from bookmarks_converter.models import Folder, NodeMixin, Url
 
 
-def test_create_url_as_db(url_custom, create_class_instance):
+def test_convert_url_to_db(url_custom, create_class_instance):
     instance = Url(
         title="Google",
         index=0,
@@ -21,23 +21,23 @@ def test_create_url_as_db(url_custom, create_class_instance):
             assert value == getattr(instance, key)
 
 
-def test_create_folder_as_db(folder_custom, create_class_instance):
+def test_convert_folder_to_db(folder_custom, create_class_instance):
     instance = Folder(title="Main Folder", index=0, parent_id=0, _id=1, date_added=0)
     for key, value in folder_custom.items():
         assert value == getattr(instance, key)
 
 
-def test_create_url_as_json(url_custom, create_class_instance):
+def test_convert_url_to_json(url_custom, create_class_instance):
     instance = create_class_instance(url_custom, NodeMixin)
-    assert url_custom == instance.create_url_as_json()
+    assert url_custom == instance._convert_url_to_json()
 
 
-def test_create_folder_as_json(folder_custom, create_class_instance):
+def test_convert_folder_to_json(folder_custom, create_class_instance):
     instance = create_class_instance(folder_custom, NodeMixin)
-    assert folder_custom == instance.create_folder_as_json()
+    assert folder_custom == instance._convert_folder_to_json()
 
 
-def test_create_url_as_html(url_custom, create_class_instance):
+def test_convert_url_to_html(url_custom, create_class_instance):
     instance = create_class_instance(url_custom, NodeMixin)
     url = url_custom.get("url")
     date_added = url_custom.get("date_added")
@@ -45,7 +45,7 @@ def test_create_url_as_html(url_custom, create_class_instance):
     icon = url_custom.get("icon")
     title = url_custom.get("title")
     html_url = f'<DT><A HREF="{url}" ADD_DATE="{date_added}" LAST_MODIFIED="0" ICON_URI="{icon_uri}" ICON="{icon}">{title}</A>\n'
-    assert html_url == instance.create_url_as_html()
+    assert html_url == instance._convert_url_to_html()
 
 
 # preparing the arguments for @pytest.mark.parametrize()
@@ -78,24 +78,31 @@ arguments = [(t, e) for t, e in zip(titles, expect)]
     arguments,
     ids=titles,
 )
-def test_create_folder_as_html(title, expected, folder_custom, create_class_instance):
+def test_convert_folder_to_html(title, expected, folder_custom, create_class_instance):
     instance = create_class_instance(folder_custom, NodeMixin)
     instance.title = title
-    assert expected == instance.create_folder_as_html()
+    assert expected == instance._convert_folder_to_html()
+
+
+@pytest.mark.parametrize("type_", ["url", "folder"])
+def test_check_instance_type(type_):
+    instance = NodeMixin()
+    instance.type = type_
+    assert instance._check_instance_type(type_) is None
 
 
 @pytest.mark.parametrize(
     "method",
     [
-        "create_folder_as_db",
-        "create_url_as_db",
-        "create_folder_as_html",
-        "create_url_as_html",
-        "create_folder_as_json",
-        "create_url_as_json",
+        "_convert_folder_to_db",
+        "_convert_url_to_db",
+        "_convert_folder_to_html",
+        "_convert_url_to_html",
+        "_convert_folder_to_json",
+        "_convert_url_to_json",
     ],
 )
-def test_check_type(method):
+def test_check_instance_type_error(method):
     instance = NodeMixin()
     instance.type = "None"
     with pytest.raises(TypeError) as error:
@@ -107,3 +114,11 @@ def test_iter():
     instance.children = [i for i in range(10)]
     for a, b in zip(instance, instance.children):
         assert a == b
+
+
+def test_repr():
+    instance = NodeMixin()
+    instance.title = "Title"
+    instance.type = "folder"
+    instance.id = 0
+    assert repr(instance) == "Title - folder - id: 0"

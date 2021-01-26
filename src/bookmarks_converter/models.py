@@ -17,8 +17,9 @@ class NodeMixin:
     different formats HTML/JSON/DB, used in the creation of new bookmark tree
     in a different format."""
 
-    def create_folder_as_db(self):
-        self.check_type("folder")
+    def _convert_folder_to_db(self):
+        """Convert a (html or json) folder object to a database folder object."""
+        self._check_instance_type("folder")
         folder = Folder(
             _id=self.id,
             index=self.index,
@@ -28,8 +29,9 @@ class NodeMixin:
         )
         return folder
 
-    def create_url_as_db(self):
-        self.check_type("url")
+    def _convert_url_to_db(self):
+        """Convert a url (html or json) object to a database url object."""
+        self._check_instance_type("url")
         url = Url(
             _id=self.id,
             index=self.index,
@@ -43,8 +45,9 @@ class NodeMixin:
         )
         return url
 
-    def create_folder_as_html(self):
-        self.check_type("folder")
+    def _convert_folder_to_html(self):
+        """Convert a (database or json) folder object to a html folder string."""
+        self._check_instance_type("folder")
         if self.title in ("Bookmarks Toolbar", "Bookmarks bar", "toolbar"):
             return f'<DT><H3 ADD_DATE="{self.date_added}" LAST_MODIFIED="0" PERSONAL_TOOLBAR_FOLDER="true">{self.title}</H3>\n'
         elif self.title in ("Other Bookmarks", "unfiled"):
@@ -52,30 +55,31 @@ class NodeMixin:
         else:
             return f'<DT><H3 ADD_DATE="{self.date_added}" LAST_MODIFIED="0">{self.title}</H3>\n'
 
-    def create_url_as_html(self):
-        self.check_type("url")
+    def _convert_url_to_html(self):
+        """Convert a (database or json) url object to a html url string."""
+        self._check_instance_type("url")
         return f'<DT><A HREF="{self.url}" ADD_DATE="{self.date_added}" LAST_MODIFIED="0" ICON_URI="{self.icon_uri}" ICON="{self.icon}">{self.title}</A>\n'
 
-    def create_folder_as_json(self):
-        self.check_type("folder")
+    def _convert_folder_to_json(self):
+        """Convert a (database or html) folder object to a json folder object."""
+        self._check_instance_type("folder")
         folder = {
             "type": self.type,
             "id": self.id,
             "index": self.index,
-            "parent_id": self.parent_id,
             "title": self.title,
             "date_added": self.date_added,
             "children": [],
         }
         return folder
 
-    def create_url_as_json(self):
-        self.check_type("url")
+    def _convert_url_to_json(self):
+        """Convert a (database or html) url object to a json url object."""
+        self._check_instance_type("url")
         url = {
             "type": self.type,
             "id": self.id,
             "index": self.index,
-            "parent_id": self.parent_id,
             "title": self.title,
             "date_added": self.date_added,
             "url": self.url,
@@ -85,15 +89,17 @@ class NodeMixin:
         }
         return url
 
-    def check_type(self, type_):
+    def _check_instance_type(self, type_):
+        """"Check that the type of the instance matches the type of executed method"""
         if self.type != type_:
             raise TypeError(f"The item you are converting is not a {type_}")
 
     def __iter__(self):
-        "Iterating over an Object iterates over its contents."
+        """Iterating over an Object iterates over its contents."""
         return iter(self.children)
 
     def __repr__(self):
+        """Bookmark object representation"""
         return f"{self.title} - {self.type} - id: {self.id}"
 
 
@@ -129,7 +135,7 @@ class Bookmark(Base, NodeMixin):
     parent = relationship(
         "Bookmark",
         cascade="save-update, merge",
-        backref=backref("children", cascade="all"),
+        backref=backref("children", cascade="all", order_by="Bookmark.index"),
         lazy=False,
         remote_side="Bookmark.id",
     )
@@ -137,27 +143,30 @@ class Bookmark(Base, NodeMixin):
     __mapper_args__ = {"polymorphic_on": type, "polymorphic_identity": "bookmark"}
 
     def insert(self):
+        """Insert a Bookmark object into the database."""
         session.add(self)
         session.commit()
 
     def update(self):
+        """Update a Bookmark object in the database"""
         session.commit()
 
     def delete(self):
+        """Delete a Bookmark object from the database"""
         session.delete(self)
         session.commit()
 
     def __eq__(self, other):
         if not isinstance(other, type(self)):
             return NotImplemented
-        for self_attr, other_attr in zip(vars(self), vars(other)):
-            # skip if the attribute is '_sa_instance_state' which is in
-            # .__dict__ and vars(), since the object is a sqlalchemy object.
-            if self_attr.startswith("_"):
-                continue
-            if self.__getattribute__(self_attr) != other.__getattribute__(other_attr):
-                return False
-        return True
+        # skip if the attribute is '_sa_instance_state' which is in
+        # .__dict__ and vars(), since the object is a sqlalchemy object.
+        remove = "_sa_instance_state"
+        vars_self = vars(self).copy()
+        vars_other = vars(other).copy()
+        del vars_self[remove]
+        del vars_other[remove]
+        return vars_self == vars_other
 
 
 class Folder(Bookmark):
@@ -253,23 +262,23 @@ class JSONBookmark(NodeMixin):
 
     Attributes:
     ----------
-    :param id: id of the element
-    :type id: int
-    :param index: index (position) of the element in its parent
-    :type index: int
-    :param parent_id: id of the element's parent
-    :type parent_id: int
-    :param title: title (name) of the element
-    :type title: str
-    :param date_added: date (time since epoch) at which the element was
+    id: int
+        id of the element
+    index : int
+        index (position) of the element in its parent
+    parent_id : int
+        id of the element's parent
+    title : str
+        title (name) of the element
+    date_added : float
+        date (time since epoch) at which the element was
     created/added to the bookmarks
-    :type date_added: float
-    :param type: element type (folder or url)
-    :type type: str
-    :param children: children of the current element
-    :type children: list
-    :param source: source of bookmark element (chrome/firefox/bookmarkie)
-    :type source: str
+    type : str
+        element type (folder or url)
+    children : list of dict
+        children of the current element
+    source : str
+        source of bookmark element (chrome/firefox/bookmarkie)
 
     Parameters:
     -----------
@@ -278,6 +287,8 @@ class JSONBookmark(NodeMixin):
 
     def __init__(self, **kwargs):
 
+        # check the version of the passed json file depending on unique elements
+        # that exist in each source.
         if "name" in kwargs:
             self.source = "Chrome"
         elif "typeCode" in kwargs:
@@ -322,8 +333,8 @@ class HTMLBookmark(Tag, NodeMixin):
       (date_added, icon, icon_uri, id, index, title, type and url)
       which are usually found at the 'self.attrs' dictionary.
     - add a setter for (id, index and title)
-    - redirect the self.children from and iterator iter(self.contents)
-    to a list (self.contents) directly"""
+    - redirect the self.children from an iterator `iter(self.contents)`
+    to a list `self.contents` directly"""
 
     id_counter = itertools.count(start=2)
 
@@ -335,6 +346,8 @@ class HTMLBookmark(Tag, NodeMixin):
 
     @property
     def date_added(self):
+        """Redirect the `add_date` lookup to a `date_added` attribute.
+        add a `date_added` with current datetime if it doesn't exist"""
         date_added = self.attrs.get("add_date")
         if not date_added:
             date_added = round(time.time() * 1000)
@@ -342,14 +355,17 @@ class HTMLBookmark(Tag, NodeMixin):
 
     @property
     def icon(self):
+        """Redirect the `icon` lookup to a `icon` attribute."""
         return self.attrs.get("icon")
 
     @property
     def icon_uri(self):
+        """Redirect the `iconuri` lookup to a `icon_uri` attribute."""
         return self.attrs.get("iconuri")
 
     @property
     def id(self):
+        """Redirect the `id` lookup to a `id` attribute."""
         return self.attrs.get("id")
 
     @id.setter
@@ -358,6 +374,7 @@ class HTMLBookmark(Tag, NodeMixin):
 
     @property
     def index(self):
+        """Redirect the `index` lookup to a `index` attribute."""
         return self.attrs.get("index")
 
     @index.setter
@@ -366,6 +383,7 @@ class HTMLBookmark(Tag, NodeMixin):
 
     @property
     def title(self):
+        """Redirect the `title` lookup to a `title` attribute."""
         return self.attrs.get("title")
 
     @title.setter
@@ -374,6 +392,7 @@ class HTMLBookmark(Tag, NodeMixin):
 
     @property
     def type(self):
+        """Add a type attribute defining the type of object the instance is."""
         if self.name == "h3":
             return "folder"
         elif self.name == "a":
@@ -381,14 +400,16 @@ class HTMLBookmark(Tag, NodeMixin):
 
     @property
     def url(self):
+        """Redirect the `href` lookup to a `url` attribute."""
         return self.attrs.get("href")
 
     @property
     def children(self):
         """To standardize the access of children amongst the different
-        classes."""
+        Bookmark classes."""
         return self.contents
 
     @classmethod
     def reset_id_counter(cls):
+        """Reset the id_counter."""
         cls.id_counter = itertools.count(start=2)
