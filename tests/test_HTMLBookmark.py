@@ -3,7 +3,6 @@ from bookmarks_converter.models import HTMLBookmark
 
 def test_HTMLBookmark_url_custom(url_custom):
     url = HTMLBookmark(name="a", attrs=url_custom)
-
     assert isinstance(url_custom.get("date_added"), int)
     assert url_custom.get("icon") == url.icon
     assert url_custom.get("iconuri") == url.icon_uri
@@ -23,7 +22,6 @@ def test_HTMLBookmark_url_custom(url_custom):
 
 def test_HTMLBookmark_folder_custom(folder_custom):
     folder = HTMLBookmark(name="h3", attrs=folder_custom)
-
     assert isinstance(folder_custom.get("date_added"), int)
     assert folder_custom.get("id") == folder.id
     assert folder_custom.get("index") == folder.index

@@ -21,14 +21,15 @@ def result_bookmark_files():
 
 
 @pytest.fixture
-def get_dates_from_db():
+def get_data_from_db():
     def _function(db_path, source):
         database_path = "sqlite:///" + str(db_path)
         engine = create_engine(database_path, encoding="utf-8")
         Session = sessionmaker(bind=engine)
         session = Session()
         bookmarks = session.query(Bookmark).order_by(Bookmark.id).all()
-        root_date = session.query(Bookmark).filter_by(title="root").one().date_added
+        if source != None:
+            root_date = session.query(Bookmark).filter_by(title="root").one().date_added
         if source == "Chrome":
             folder_date = (
                 session.query(Bookmark)
@@ -43,6 +44,8 @@ def get_dates_from_db():
                 .one()
                 .date_added
             )
+        else:
+            root_date = folder_date = None
         session.close()
         return bookmarks, root_date, folder_date
 
@@ -132,7 +135,6 @@ def url_custom():
         "type": "url",
         "id": 2,
         "index": 0,
-        "parent_id": 1,
         "url": "https://www.google.com",
         "title": "Google",
         "date_added": 0,
@@ -148,7 +150,6 @@ def folder_custom():
         "type": "folder",
         "id": 1,
         "index": 0,
-        "parent_id": 0,
         "title": "Main Folder",
         "date_added": 0,
         "children": [],

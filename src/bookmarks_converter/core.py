@@ -29,43 +29,43 @@ from .models import Base, Bookmark, HTMLBookmark, JSONBookmark
 class DBMixin:
     """Mixing containing all the DB related functions."""
 
-    def parse_db(self):
-        """Import the DB bookmarks file into self.tree as an object."""
+    def _parse_db(self):
+        """Import the DB bookmarks file into self._tree as an object."""
         database_path = "sqlite:///" + str(self.filepath)
         engine = create_engine(database_path, encoding="utf-8")
         Session = sessionmaker(bind=engine)
         session = Session()
-        self.tree = session.query(Bookmark).get(1)
+        self._tree = session.query(Bookmark).get(1)
 
-    def convert_to_db(self):
+    def _convert_to_db(self):
         """Convert the imported bookmarks to database objects."""
         self.bookmarks = []
-        self.stack = [self.tree]
+        self._stack = [self._tree]
 
-        while self.stack:
-            self.stack_item = self.stack.pop()
+        while self._stack:
+            self._stack_item = self._stack.pop()
             self._iterate_folder_db()
 
     def _iterate_folder_db(self):
         """Iterate through each item in the hierarchy tree and create
         a database object, appending any folders that contain children to
         the stack for further processing."""
-        folder = self.stack_item.create_folder_as_db()
+        folder = self._stack_item._convert_folder_to_db()
         self.bookmarks.append(folder)
         parent_id = folder.id
-        for child in self.stack_item:
+        for child in self._stack_item:
             child.parent_id = parent_id
             if child.type == "folder":
                 if child.children:
-                    self.stack.append(child)
+                    self._stack.append(child)
                 else:
-                    folder = child.create_folder_as_db()
+                    folder = child._convert_folder_to_db()
                     self.bookmarks.append(folder)
             else:
-                url = child.create_url_as_db()
+                url = child._convert_url_to_db()
                 self.bookmarks.append(url)
 
-    def save_to_db(self):
+    def _save_to_db(self):
         """Function to export the bookmarks as SQLite3 DB."""
         database_path = "sqlite:///" + str(self.output_filepath.with_suffix(".db"))
         engine = create_engine(database_path, encoding="utf-8")
@@ -80,8 +80,8 @@ class DBMixin:
 class HTMLMixin:
     """Mixing containing all the HTML related functions."""
 
-    def parse_html(self):
-        """Imports the HTML Bookmarks file into self.tree as a modified soup
+    def _parse_html(self):
+        """Imports the HTML Bookmarks file into self._tree as a modified soup
         object using the TreeBuilder class HTMLBookmark, which adds property
         access to the html attributes of the soup object."""
         self.format_html_file(self.filepath, self.temp_filepath)
@@ -109,10 +109,10 @@ class HTMLMixin:
         - All "<H3>" and "<A>" tag's inner text are added as a "title"
         attribute within the html element.
 
-        :param filepath: absolute path to bookmarks html file.
-        :type filepath: str
-        :param output_filepath: absolute path and name for output file.
-        :type output_filepath: str"""
+        filepath: str
+            absolute path to bookmarks html file.
+        output_filepath: str
+            absolute path and name for output file."""
         with open(filepath, "r", encoding="utf-8") as input_file, open(
             output_filepath, "w", encoding="utf-8"
         ) as output_file:
@@ -144,8 +144,12 @@ class HTMLMixin:
 
         If the tree title is 'Bookmarks' we need to extract the 'Bookmarks bar'
         folder and insert it at the beginning of the root children. Then we need
-        to rename the 'Bookmarks' folder to 'Other Bookmarks'."""
-        self.tree = HTMLBookmark(
+        to rename the 'Bookmarks' folder to 'Other Bookmarks'.
+
+        tree: :class: `bs4.element.Tag`
+            BeautifulSoup object containing the first <H3> tag found in the
+            html file."""
+        self._tree = HTMLBookmark(
             name="h3",
             attrs={
                 "id": 1,
@@ -155,19 +159,19 @@ class HTMLMixin:
                 "date_added": round(time.time() * 1000),
             },
         )
-        self.tree.children.append(tree)
+        self._tree.children.append(tree)
         if tree.title == "Bookmarks Menu":
             for i, child in enumerate(tree):
                 if child.title in ("Bookmarks Toolbar", "Other Bookmarks"):
-                    self.tree.children.append(tree.children.pop(i))
+                    self._tree.children.append(tree.children.pop(i))
         elif tree.title == "Bookmarks":
             tree.title = "Other Bookmarks"
             for i, child in enumerate(tree):
                 if child.title == "Bookmarks bar":
-                    self.tree.children.insert(0, tree.children.pop(i))
+                    self._tree.children.insert(0, tree.children.pop(i))
                     break
 
-    def convert_to_html(self):
+    def _convert_to_html(self):
         """Convert the imported bookmarks to HTML."""
         header = """<!DOCTYPE NETSCAPE-Bookmark-file-1>
 <!-- This is an automatically generated file.
@@ -181,11 +185,11 @@ class HTMLMixin:
 """
         footer = "</DL>"
 
-        self.stack = self.tree.children[::-1]
+        self._stack = self._tree.children[::-1]
         body = []
 
-        while self.stack:
-            self.stack_item = self.stack.pop()
+        while self._stack:
+            self._stack_item = self._stack.pop()
             folder = self._iterate_folder_html()
             if folder:
                 self._create_placeholder(body, folder)
@@ -197,27 +201,27 @@ class HTMLMixin:
         HTML. If a folder has children, it is added to the stack and a
         placeholder is left in its place so it can be inserted back to its
         position after processing."""
-        folder = [self.stack_item.create_folder_as_html(), "<DL><p>\n"]
+        folder = [self._stack_item._convert_folder_to_html(), "<DL><p>\n"]
         list_end = "</DL><p>\n"
-        for child in self.stack_item:
+        for child in self._stack_item:
             if child.type == "folder":
                 item = f"<folder{child.id}>"
-                self.stack.append(child)
+                self._stack.append(child)
             else:
-                item = child.create_url_as_html()
+                item = child._convert_url_to_html()
             folder.append(item)
         folder.append(list_end)
         result = "".join(folder)
         return result
 
     def _create_placeholder(self, body, folder):
-        placeholder = f"<folder{self.stack_item.id}>"
+        placeholder = f"<folder{self._stack_item.id}>"
         if body and (placeholder in body[-1]):
             body[-1] = body[-1].replace(placeholder, folder)
         else:
             body.append(folder)
 
-    def save_to_html(self):
+    def _save_to_html(self):
         """Export the bookmarks as HTML."""
         output_file = self.output_filepath.with_suffix(".html")
         with open(output_file, "w", encoding="utf-8") as file_:
@@ -227,15 +231,15 @@ class HTMLMixin:
 class JSONMixin:
     """Mixing containing all the JSON related functions."""
 
-    def parse_json(self):
-        """Imports the JSON Bookmarks file into self.tree as a
+    def _parse_json(self):
+        """Imports the JSON Bookmarks file into self._tree as a
         JSONBookmark object."""
         self.format_json_file(self.filepath, self.temp_filepath)
         # with object_hook the json tree is loaded as JSONBookmark object tree.
         with open(self.temp_filepath, "r", encoding="utf-8") as file_:
-            self.tree = json.load(file_, object_hook=self._json_to_object)
+            self._tree = json.load(file_, object_hook=self._json_to_object)
         self.temp_filepath.unlink()
-        if self.tree.source == "Chrome":
+        if self._tree.source == "Chrome":
             self._add_index()
 
     @staticmethod
@@ -278,26 +282,26 @@ class JSONMixin:
         with open(output_filepath, "w", encoding="utf-8") as file_:
             json.dump(tree, file_, ensure_ascii=False)
 
-    def convert_to_json(self):
+    def _convert_to_json(self):
         """Convert the imported bookmarks to JSON."""
-        self.stack = []
-        self.bookmarks = self.tree.create_folder_as_json()
-        self.stack.append((self.bookmarks, self.tree))
+        self._stack = []
+        self.bookmarks = self._tree._convert_folder_to_json()
+        self._stack.append((self.bookmarks, self._tree))
 
-        while self.stack:
-            self.stack_item = self.stack.pop()
-            folder, node = self.stack_item
+        while self._stack:
+            self._stack_item = self._stack.pop()
+            folder, node = self._stack_item
             children = folder.get("children")
             for child in node:
                 if child.type == "folder":
-                    item = child.create_folder_as_json()
+                    item = child._convert_folder_to_json()
                     if child.children:
-                        self.stack.append((item, child))
+                        self._stack.append((item, child))
                 else:
-                    item = child.create_url_as_json()
+                    item = child._convert_url_to_json()
                 children.append(item)
 
-    def save_to_json(self):
+    def _save_to_json(self):
         """Function to export the bookmarks as JSON."""
         output_file = self.output_filepath.with_suffix(".json")
         with open(output_file, "w", encoding="utf-8") as file_:
@@ -309,31 +313,47 @@ class BookmarksConverter(DBMixin, HTMLMixin, JSONMixin):
     using Iteration and Stack.
 
     Usage:
-    1- Instantiate a class and pass in the filepath:
-        - `bookmarks = BookmarksConverter(filepath)`.
-    2- Import and Parse the bookmarks file using the method corresponding to
-        the source format:
-        - `bookmarks.parse_db()`, for a database file.
-        - `bookmarks.parse_html()`, for a html file.
-        - `bookmarks.parse_json()`, for a json file.
-    3- Convert the data using any of the convert methods:
-        - `bookmarks.convert_to_db()`, convert to database.
-        - `bookmarks.convert_to_html()`, convert to html.
-        - `bookmarks.convert_to_json()`, convert to json.
+    1- Instantiate a class and pass in the filepath as string or `Path` object:
+        - `instance = BookmarksConverter(filepath)`.
+    2- Import and Parse the bookmarks file passing the source format as a string in lower case:
+        - `instance.parse("db")`, for a database file.
+        - `instance.parse("html")`, for a html file.
+        - `instance.parse("json")`, for a json file.
+    3- Convert the data to the desired format passing the format as a lower
+    case string:
+        - `instance.convert("db")`, convert to database.
+        - `instance.convert("html")`, convert to html.
+        - `instance.convert("json")`, convert to json.
     4- At this point the bookmarks are stored in the `bookmarks` attribute
-        accessible through `bookmarks.bookmarks`.
-    5- Export the bookmarks to a file using the export method corresponding
-        to the conversion method used.
-        - `bookmarks.save_to_db(), if the data was converted to database format.
-        - `bookmarks.save_to_html(), if the data was converted to html format.
-        - `bookmarks.save_to_json(), if the data was converted to json format.
-    """
+        accessible through `instance.bookmarks`.
+    5- Export the bookmarks to a file using the save method `instance.save()`.
+
+    Parameters:
+    -----------
+    filepath : str or Path
+        path to the file to be converted using BookmarksConverter
+
+    Attributes:
+    -----------
+    bookmarks : list or dict or str
+        list, dict or str containing the bookmarks converted using BookmarksConverter.
+        - list of database objects if converted to database
+        - dict tree with bookmarks if converted to json
+        - str of the tree if converted to html
+    filepath : str or Path
+        path to the file to be converted using BookmarksConverter
+    output_filepath : Path
+        path to the output file exported using `.save()` method"""
+
+    _formats = ("db", "html", "json")
 
     def __init__(self, filepath):
+        self._export = None
+        self._format = None
+        self._stack = None
+        self._stack_item = None
+        self._tree = None
         self.bookmarks = None
-        self.stack = None
-        self.stack_item = None
-        self.tree = None
         self.filepath = Path(filepath)
         self._prepare_filepaths()
 
@@ -348,10 +368,33 @@ class BookmarksConverter(DBMixin, HTMLMixin, JSONMixin):
 
     def _add_index(self):
         """Add index to each element if tree source is HTML or JSON(Chrome)"""
-        stack = [self.tree]
+        stack = [self._tree]
         while stack:
             stack_item = stack.pop()
             for i, child in enumerate(stack_item, 0):
                 child.index = i
                 if child.type == "folder":
                     stack.append(child)
+
+    def _dispatcher(self, method):
+        if self._format.lower() not in self._formats:
+            raise TypeError(
+                "The format you specified does not exist, make sure its 'db', 'html' or 'json'."
+            )
+        getattr(self, method)()
+
+    def parse(self, format_):
+        self._format = format_
+        self._dispatcher(f"_parse_{format_}")
+
+    def convert(self, format_):
+        self._format = format_
+        self._export = format_
+        self._dispatcher(f"_convert_to_{format_}")
+
+    def save(self):
+        if self._export is None:
+            raise RuntimeError(
+                "The bookmarks attribute is empty, you have to 'convert' the bookmarks before exporting them using 'save'."
+            )
+        self._dispatcher(f"_save_to_{self._export}")
