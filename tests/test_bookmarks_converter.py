@@ -80,16 +80,26 @@ class Test_JSONMixin:
         # TODO:
         pass
 
-    def test_json_to_object(self, folder_custom):
+    def test_json_to_object_folder(self, folder_custom):
         folder = JSONMixin._json_to_object(folder_custom)
         assert isinstance(folder, JSONBookmark)
+        for key, value in folder_custom.items():
+            assert value == getattr(folder, key)
+
+    def test_json_to_object_url(self, url_custom):
+        url = JSONMixin._json_to_object(url_custom)
+        assert isinstance(url, JSONBookmark)
+        for key, value in url_custom.items():
+            if key == "iconuri":
+                assert value == url.icon_uri
+            else:
+                assert value == getattr(url, key)
 
     def test_format_json_file_chrome(self, source_bookmark_files, read_json):
         source_file = source_bookmark_files["bookmarks_chrome.json"]
         output_file = Path(source_file).with_name("temporary.json")
         BookmarksConverter.format_json_file(source_file, output_file)
         json_data = read_json(output_file)
-
         assert json_data.get("name") == "root"
         assert json_data.get("children")[0].get("name") == "Bookmarks bar"
         assert json_data.get("children")[1].get("name") == "Other Bookmarks"
@@ -146,7 +156,6 @@ class Test_BookmarksConverter:
         temp_filepath = Path("/home/user/Downloads/source/temp_bookmarks.html")
         output_filepath = Path("/home/user/Downloads/source/output_bookmarks.html")
         bookmarks = BookmarksConverter(filename)
-
         assert temp_filepath == bookmarks.temp_filepath
         assert output_filepath == bookmarks.output_filepath
 
