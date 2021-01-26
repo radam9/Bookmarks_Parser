@@ -17,13 +17,14 @@ class Test_DBMixin:
         bookmarks, _, _ = get_data_from_db(file_path, "Chrome")
         assert bookmarks[0] == instance._tree
 
-    def test_iterate_folder_db(self):
-        # TODO:
-        pass
-
-    def test_convert_to_db(self):
-        # TODO:
-        pass
+    def test_convert_to_db(self, mocker):
+        mocky = mocker.patch.object(BookmarksConverter, "_iterate_folder_db")
+        instance = BookmarksConverter("filepath")
+        instance._tree = "test"
+        instance._convert_to_db()
+        assert isinstance(instance._stack, list)
+        assert len(instance._stack) == 0
+        assert mocky.call_count == 1
 
     def test_save_to_db(self, get_data_from_db):
         file_path = "temp.db"
@@ -46,40 +47,22 @@ class Test_DBMixin:
 
 
 class Test_HTMLMixin:
-    def test_parse_html(self):
-        # TODO:
-        pass
-
-    def test_format_html_file(self):
-        # TODO:
-        pass
-
-    def test_restructure_root(self):
-        # TODO:
-        pass
-
-    def test_convert_to_html(self):
-        # TODO:
-        pass
-
-    def test_iterate_folder_html(self):
-        # TODO:
-        pass
-
-    def test_create_placeholder(self):
-        # TODO:
-        pass
-
-    def test_save_to_html(self):
-        # TODO:
-        pass
+    def test_save_to_html(self, result_bookmark_files):
+        result_file = result_bookmark_files["from_firefox_json.html"]
+        instance = BookmarksConverter(result_file)
+        with open(result_file, "r", encoding="utf-8") as file_:
+            instance.bookmarks = file_.read()
+        output_file = Path(result_file).with_name("output_file.html")
+        instance.output_filepath = output_file
+        # setting the _export and _format attributes manually.
+        instance._export = "html"
+        instance._format = "html"
+        instance.save()
+        assert cmp(result_file, output_file, shallow=False)
+        output_file.unlink()
 
 
 class Test_JSONMixin:
-    def test_parse_json(self):
-        # TODO:
-        pass
-
     def test_json_to_object_folder(self, folder_custom):
         folder = JSONMixin._json_to_object(folder_custom)
         assert isinstance(folder, JSONBookmark)
@@ -117,10 +100,6 @@ class Test_JSONMixin:
         assert root_children[3].get("title") == "Mobile Bookmarks"
         output_file.unlink()
 
-    def test_convert_to_json(self):
-        # TODO:
-        pass
-
     def test_save_to_json(self, result_bookmark_files):
         result_file = result_bookmark_files["from_firefox_html.json"]
         instance = BookmarksConverter(result_file)
@@ -143,6 +122,8 @@ class Test_BookmarksConverter:
         temp_file = file_path.with_name(f"temp_{file_path.name}")
         instance = BookmarksConverter(str(file_path))
         assert instance.bookmarks is None
+        assert instance._export is None
+        assert instance._format is None
         assert instance._stack is None
         assert instance._stack_item is None
         assert instance._tree is None
@@ -158,10 +139,6 @@ class Test_BookmarksConverter:
         bookmarks = BookmarksConverter(filename)
         assert temp_filepath == bookmarks.temp_filepath
         assert output_filepath == bookmarks.output_filepath
-
-    def test_add_index(self):
-        # TODO:
-        pass
 
     @pytest.mark.parametrize(
         "_format, method",
@@ -179,12 +156,12 @@ class Test_BookmarksConverter:
     )
     def test_dispatcher(self, _format, method, mocker):
         lower_format = _format.lower()
-        mocker.patch.object(BookmarksConverter, method)
+        mocky = mocker.patch.object(BookmarksConverter, method)
         instance = BookmarksConverter("filepath")
         instance._export = lower_format
         instance._format = lower_format
         instance._dispatcher(method)
-        getattr(BookmarksConverter, method).assert_called_once()
+        mocky.assert_called_once()
 
     def test_dispatcher_error(self):
         instance = BookmarksConverter("filepath")
@@ -194,32 +171,32 @@ class Test_BookmarksConverter:
 
     @pytest.mark.parametrize("_format", ["db", "json", "html"])
     def test_parse(self, _format, mocker):
-        mocker.patch.object(BookmarksConverter, "_dispatcher")
+        mocky = mocker.patch.object(BookmarksConverter, "_dispatcher")
         method = f"_parse_{_format}"
         instance = BookmarksConverter("filepath")
         instance.parse(_format)
         assert instance._format == _format
-        BookmarksConverter._dispatcher.assert_called_once_with(method)
+        mocky.assert_called_once_with(method)
 
     @pytest.mark.parametrize("_format", ["db", "json", "html"])
     def test_convert(self, _format, mocker):
-        mocker.patch.object(BookmarksConverter, "_dispatcher")
+        mocky = mocker.patch.object(BookmarksConverter, "_dispatcher")
         method = f"_convert_to_{_format}"
         instance = BookmarksConverter("filepath")
         instance.convert(_format)
         assert instance._export == _format
         assert instance._format == _format
-        BookmarksConverter._dispatcher.assert_called_once_with(method)
+        mocky.assert_called_once_with(method)
 
     @pytest.mark.parametrize("_format", ["db", "json", "html"])
     def test_save(self, _format, mocker):
-        mocker.patch.object(BookmarksConverter, "_dispatcher")
+        mocky = mocker.patch.object(BookmarksConverter, "_dispatcher")
         method = f"_save_to_{_format}"
         instance = BookmarksConverter("filepath")
         instance._export = _format
         instance._format = _format
         instance.save()
-        BookmarksConverter._dispatcher.assert_called_once_with(method)
+        mocky.assert_called_once_with(method)
 
     def test_save_error(self):
         instance = BookmarksConverter("filepath")
